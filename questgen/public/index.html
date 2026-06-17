@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuestGen — Build Your Personal Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f4;
+    --bg-tertiary: #eeede9;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b67;
+    --text-tertiary: #9c9c98;
+    --border-light: rgba(0,0,0,0.1);
+    --border-mid: rgba(0,0,0,0.18);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --purple: #7F77DD;
+    --purple-light: #EEEDFE;
+    --purple-dark: #3C3489;
+    --teal: #1D9E75;
+    --teal-light: #E1F5EE;
+    --teal-dark: #085041;
+    --coral: #D85A30;
+    --coral-light: #FAECE7;
+    --coral-dark: #712B13;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --amber-dark: #633806;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-tertiary: #333330;
+      --text-primary: #f0efeb;
+      --text-secondary: #a0a09c;
+      --text-tertiary: #6b6b68;
+      --border-light: rgba(255,255,255,0.1);
+      --border-mid: rgba(255,255,255,0.18);
+      --purple-light: #26215C;
+      --purple-dark: #CECBF6;
+      --teal-light: #04342C;
+      --teal-dark: #9FE1CB;
+      --coral-light: #4A1B0C;
+      --coral-dark: #F5C4B3;
+      --amber-light: #412402;
+      --amber-dark: #FAC775;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+
+  /* ── LANDING PAGE ── */
+  #page-landing {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+    text-align: center;
+  }
+
+  .logo-mark {
+    width: 52px; height: 52px;
+    background: var(--purple);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 4px 20px rgba(127,119,221,0.35);
+  }
+
+  .landing-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+    line-height: 1.15;
+    margin-bottom: 0.75rem;
+  }
+
+  .landing-title span { color: var(--purple); }
+
+  .landing-sub {
+    font-size: 15px;
+    color: var(--text-secondary);
+    max-width: 420px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  .btn-primary {
+    background: var(--purple);
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .landing-badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 2.5rem;
+  }
+
+  .lbadge {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 0.5px solid var(--border-mid);
+    color: var(--text-secondary);
+    background: var(--bg-primary);
+  }
+
+  /* ── FORM PAGE ── */
+  #page-form { display: none; }
+
+  .form-wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+
+  .form-header { margin-bottom: 2rem; }
+  .form-back {
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 1.5rem;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 0;
+  }
+  .form-back:hover { color: var(--text-primary); }
+
+  .form-title { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .form-subtitle { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+  .form-section {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border-light);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 1rem;
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  label .hint {
+    font-weight: 400;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    margin-left: 6px;
+  }
+
+  input[type="text"], input[type="date"], input[type="number"], select, textarea {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 0.5px solid var(--border-mid);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--purple);
+  }
+
+  textarea { resize: vertical; min-height: 80px; line-height: 1.55; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .chip {
+    padding: 6px 14px;
+    border-radius: 99px;
+    border: 1px solid var(--border-mid);
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    background: var(--bg-secondary);
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .chip.selected {
+    background: var(--purple-light);
+    border-color: var(--purple);
+    color: var(--purple-dark);
+    font-weight: 500;
+  }
+
+  .api-note {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  .api-note a { color: var(--purple); text-decoration: none; }
+
+  .key-input-wrap { position: relative; }
+  .key-input-wrap input { padding-right: 70px; font-family: monospace; font-size: 12px; }
+  .key-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: var(--purple);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 2px 4px;
+  }
+
+  .submit-area { margin-top: 1.5rem; text-align: center; }
+  .btn-generate {
+    background: var(--purple);
+    color: white;
+    border: none;
+    padding: 14px 36px;
+    border-radius: 99px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s, transform 0.1s;
+    width: 100%;
+  }
+  .btn-generate:hover { opacity: 0.88; }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .error-box {
+    background: var(--coral-light);
+    border: 0.5px solid var(--coral);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--coral-dark);
+    margin-top: 1rem;
+    display: none;
+    line-height: 1.5;
+  }
+
+  /* ── LOADING PAGE ── */
+  #page-loading {
+    display: none;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1.5rem;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .spinner {
+    width: 44px; height: 44px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-title { font-size: 18px; font-weight: 600; }
+  .loading-sub { font-size: 14px; color: var(--text-secondary); max-width: 300px; line-height: 1.6; }
+
+  .loading-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 0.5rem; }
+  .loading-step {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.3s;
+  }
+  .loading-step.active { color: var(--purple); font-weight: 500; }
+  .loading-step.done { color: var(--teal); }
+  .step-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  /* ── TRACKER PAGE (same design as original) ── */
+  #page-tracker { display: none; }
+
+  .container { max-width: 740px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  .header { padding: 0 0 1.5rem; }
+  .title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+  .title-text { font-size: 24px; font-weight: 600; color: var(--text-primary); }
+  .pill { font-size: 11px; padding: 3px 10px; background: var(--purple-light); color: var(--purple-dark); border-radius: 99px; font-weight: 500; }
+  .subtitle { font-size: 14px; color: var(--text-secondary); }
+
+  .xp-bar-wrap { margin: 1.25rem 0; }
+  .xp-label-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .xp-track { background: var(--bg-secondary); border-radius: 99px; height: 10px; border: 0.5px solid var(--border-light); overflow: hidden; }
+  .xp-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width 0.4s ease; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 1rem 0; }
+  .stat-card { background: var(--bg-primary); border-radius: var(--radius-md); padding: 12px; text-align: center; border: 0.5px solid var(--border-light); }
+  .stat-num { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+  .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+  .section-block { background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border-light); padding: 1.25rem; margin: 1.25rem 0; }
+  .section-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .heatmap-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+  .heat-cell { aspect-ratio: 1; border-radius: 4px; border: 0.5px solid var(--border-light); background: var(--bg-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-tertiary); transition: transform 0.1s; font-weight: 500; }
+  .heat-cell:hover { transform: scale(1.1); }
+  .heat-cell.done-c1 { background: #AFA9EC; border-color: var(--purple); color: var(--purple-dark); }
+  .heat-cell.done-c2 { background: #5DCAA5; border-color: var(--teal); color: var(--teal-dark); }
+  .heat-cell.done-c3 { background: #F0997B; border-color: var(--coral); color: var(--coral-dark); }
+  .heat-cell.done-c4 { background: #FAC775; border-color: var(--amber); color: var(--amber-dark); }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 0.5px solid var(--border-light); margin: 1.5rem 0 1rem; }
+  .tab { padding: 8px 16px 10px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -0.5px; border-radius: 4px 4px 0 0; transition: color 0.15s; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+  .tab:hover { color: var(--text-primary); }
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--purple); font-weight: 500; }
+
+  .tab-panel { display: none; }
+  .tab-panel.visible { display: block; }
+
+  .week-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); padding: 8px 0 6px; border-bottom: 0.5px solid var(--border-light); margin: 1.25rem 0 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .day-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 12px; align-items: flex-start; transition: opacity 0.2s; }
+  .day-card.completed { opacity: 0.55; }
+  .day-num { min-width: 38px; text-align: center; flex-shrink: 0; }
+  .day-num .num { font-size: 18px; font-weight: 600; color: var(--text-primary); display: block; line-height: 1.2; }
+  .day-num .dow { font-size: 10px; color: var(--text-tertiary); }
+  .day-body { flex: 1; min-width: 0; }
+  .day-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 5px; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+  .badge-c1 { background: var(--purple-light); color: var(--purple-dark); }
+  .badge-c2 { background: var(--teal-light); color: var(--teal-dark); }
+  .badge-c3 { background: var(--coral-light); color: var(--coral-dark); }
+  .badge-c4 { background: var(--amber-light); color: var(--amber-dark); }
+  .day-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
+  .day-tasks { font-size: 12px; color: var(--text-secondary); line-height: 1.65; }
+  .day-xp { font-size: 11px; color: var(--purple); font-weight: 500; margin-top: 6px; }
+  .day-check { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border-mid); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s; margin-top: 1px; background: none; }
+  .day-check:hover { border-color: var(--purple); }
+  .day-check.checked { background: var(--purple); border-color: var(--purple); }
+  .checkmark { display: none; width: 10px; height: 7px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translateY(-1px); }
+  .day-check.checked .checkmark { display: block; }
+
+  .tracker-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-download {
+    background: var(--purple);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-download:hover { opacity: 0.85; }
+
+  .btn-restart {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 0.5px solid var(--border-mid);
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s;
+  }
+  .btn-restart:hover { color: var(--text-primary); }
+
+  @media (max-width: 520px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .heatmap-grid { grid-template-columns: repeat(6, 1fr); }
+    .landing-title { font-size: 28px; }
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ PAGE 1: LANDING ══ -->
+<div id="page-landing">
+  <div class="logo-mark">⚡</div>
+  <h1 class="landing-title">Your goal.<br><span>Your quest.</span></h1>
+  <p class="landing-sub">Tell us what you want to achieve. We'll build a personalized day-by-day tracker with XP, streaks, and a heatmap — just for you.</p>
+  <button class="btn-primary" onclick="showForm()">Build my tracker →</button>
+  <div class="landing-badges">
+    <span class="lbadge">⚡ XP & Levels</span>
+    <span class="lbadge">🔥 Streaks</span>
+    <span class="lbadge">📅 Heatmap</span>
+    <span class="lbadge">📥 Download</span>
+    <span class="lbadge">🤖 AI-generated</span>
+  </div>
+</div>
+
+<!-- ══ PAGE 2: FORM ══ -->
+<div id="page-form">
+  <div class="form-wrap">
+    <button class="form-back" onclick="showLanding()">← Back</button>
+    <div class="form-header">
+      <h2 class="form-title">Tell us about your goal</h2>
+      <p class="form-subtitle">Fill this in and we'll generate a day-by-day plan tailored to you — complete with tasks, XP, and a progress tracker.</p>
+    </div>
+
+    <!-- About you -->
+    <div class="form-section">
+      <div class="form-section-title">About you</div>
+      <div class="field">
+        <label>Your name <span class="hint">shown on the tracker</span></label>
+        <input type="text" id="f-name" placeholder="e.g. Arjun" maxlength="40" />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Start date</label>
+          <input type="date" id="f-start" />
+        </div>
+        <div class="field">
+          <label>Duration <span class="hint">weeks</span></label>
+          <input type="number" id="f-weeks" min="1" max="16" value="4" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Hours available per day <span class="hint">realistic average</span></label>
+        <input type="number" id="f-hours" min="1" max="12" value="3" step="0.5" />
+      </div>
+    </div>
+
+    <!-- Your goal -->
+    <div class="form-section">
+      <div class="form-section-title">Your goal</div>
+      <div class="field">
+        <label>What do you want to achieve? <span class="hint">be specific</span></label>
+        <textarea id="f-goal" placeholder="e.g. Learn Python and build 2 data science projects to get a research internship. Also prepare for GATE 2027 Maths."></textarea>
+      </div>
+      <div class="field">
+        <label>Focus areas <span class="hint">pick all that apply</span></label>
+        <div class="chip-group" id="chips-focus">
+          <span class="chip" data-val="Coding / Programming">💻 Coding</span>
+          <span class="chip" data-val="Machine Learning / AI">🤖 ML / AI</span>
+          <span class="chip" data-val="Competitive Exams">📚 Exams</span>
+          <span class="chip" data-val="Design / UI">🎨 Design</span>
+          <span class="chip" data-val="Mathematics">🧮 Maths</span>
+          <span class="chip" data-val="Research">🔬 Research</span>
+          <span class="chip" data-val="Business / Startup">🚀 Business</span>
+          <span class="chip" data-val="Writing / Content">✍️ Writing</span>
+          <span class="chip" data-val="Fitness / Health">💪 Fitness</span>
+          <span class="chip" data-val="Language Learning">🌍 Language</span>
+          <span class="chip" data-val="Finance / Investing">📈 Finance</span>
+          <span class="chip" data-val="Other">✨ Other</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Current level <span class="hint">in your main focus</span></label>
+        <select id="f-level">
+          <option value="complete beginner">Complete beginner</option>
+          <option value="know the basics">Know the basics</option>
+          <option value="intermediate" selected>Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Preferences -->
+    <div class="form-section">
+      <div class="form-section-title">Preferences</div>
+      <div class="field">
+        <label>What's your biggest constraint? <span class="hint">optional</span></label>
+        <input type="text" id="f-constraint" placeholder="e.g. College resumes in August, no laptop on weekends" />
+      </div>
+      <div class="field">
+        <label>Style of plan</label>
+        <div class="chip-group" id="chips-style">
+          <span class="chip selected" data-val="balanced">⚖️ Balanced</span>
+          <span class="chip" data-val="intense / aggressive">🔥 Intense</span>
+          <span class="chip" data-val="gentle / sustainable">🌱 Gentle</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-area">
+      <button class="btn-generate" id="btn-gen" onclick="generatePlan()">⚡ Generate my quest tracker</button>
+      <div class="error-box" id="error-box"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 3: LOADING ══ -->
+<div id="page-loading">
+  <div class="spinner"></div>
+  <div>
+    <div class="loading-title">Building your quest…</div>
+    <p class="loading-sub">Gemini is crafting a personalised plan just for you. This takes about 10–15 seconds.</p>
+  </div>
+  <div class="loading-steps">
+    <div class="loading-step active" id="step-1"><span class="step-dot"></span>Reading your goals</div>
+    <div class="loading-step" id="step-2"><span class="step-dot"></span>Generating day-by-day plan</div>
+    <div class="loading-step" id="step-3"><span class="step-dot"></span>Assigning XP & milestones</div>
+    <div class="loading-step" id="step-4"><span class="step-dot"></span>Building your tracker</div>
+  </div>
+</div>
+
+<!-- ══ PAGE 4: TRACKER ══ -->
+<div id="page-tracker">
+  <div class="container">
+    <div class="tracker-toolbar">
+      <button class="btn-download" onclick="downloadTracker()">📥 Download as HTML</button>
+      <button class="btn-restart" onclick="showLanding()">← Generate another</button>
+    </div>
+
+    <div class="header">
+      <div class="title-row">
+        <span class="title-text" id="tr-title">My Quest</span>
+        <span class="pill" id="tr-pill">Quest</span>
+      </div>
+      <div class="subtitle" id="tr-subtitle"></div>
+    </div>
+
+    <div class="xp-bar-wrap">
+      <div class="xp-label-row">
+        <span>Level <strong id="level-num">1</strong> — <span id="level-title">Apprentice</span></span>
+        <span id="xp-total-display">0</span> / <span id="next-level-xp">500</span> XP
+      </div>
+      <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="xp-current">0</div><div class="stat-label">XP earned</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">Day streak 🔥</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Days done</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-pct">0%</div><div class="stat-label">Complete</div></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-title">Progress Heatmap</div>
+      <div class="heatmap-grid" id="heatmap"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('plan')">Daily Plan</button>
+    </div>
+
+    <div class="tab-panel visible" id="tab-plan">
+      <div id="days-container"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── NAVIGATION ──
+function showLanding() {
+  document.getElementById('page-landing').style.display = 'flex';
+  document.getElementById('page-form').style.display = 'none';
+  document.getElementById('page-loading').style.display = 'none';
+  document.getElementById('page-tracker').style.display = 'none';
+}
+
+function showForm() {
+  document.getElementById('page-landing').style.display = 'none';
+  document.getElementById('page-form').style.display = 'block';
+  document.getElementById('page-loading').style.display = 'none';
+  document.getElementById('page-tracker').style.display = 'none';
+  // Set default start date to today
+  if (!document.getElementById('f-start').value) {
+    document.getElementById('f-start').valueAsDate = new Date();
+  }
+}
+
+function showLoading() {
+  document.getElementById('page-landing').style.display = 'none';
+  document.getElementById('page-form').style.display = 'none';
+  document.getElementById('page-loading').style.display = 'flex';
+  document.getElementById('page-tracker').style.display = 'none';
+}
+
+function showTracker() {
+  document.getElementById('page-landing').style.display = 'none';
+  document.getElementById('page-form').style.display = 'none';
+  document.getElementById('page-loading').style.display = 'none';
+  document.getElementById('page-tracker').style.display = 'block';
+}
+
+// ── CHIPS ──
+document.querySelectorAll('.chip-group').forEach(group => {
+  const single = group.id === 'chips-style';
+  group.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (single) group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.toggle('selected');
+    });
+  });
+});
+
+function getChipValues(groupId) {
+  return [...document.querySelectorAll('#' + groupId + ' .chip.on')].map(c => c.dataset.val).join(', ');
+}
+// ── LOADING ANIMATION ──
+let stepTimer;
+function animateSteps() {
+  const steps = ['step-1','step-2','step-3','step-4'];
+  let i = 0;
+  document.getElementById(steps[0]).classList.add('active');
+  stepTimer = setInterval(() => {
+    if (i < steps.length) {
+      if (i > 0) {
+        document.getElementById(steps[i-1]).classList.remove('active');
+        document.getElementById(steps[i-1]).classList.add('done');
+      }
+      if (i < steps.length) document.getElementById(steps[i]).classList.add('active');
+      i++;
+    }
+  }, 3000);
+}
+
+function resetSteps() {
+  clearInterval(stepTimer);
+  ['step-1','step-2','step-3','step-4'].forEach(id => {
+    document.getElementById(id).classList.remove('active','done');
+  });
+}
+
+// ── ERROR ──
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  box.textContent = msg;
+  box.style.display = 'block';
+  document.getElementById('btn-gen').disabled = false;
+}
+
+// ── GENERATE ──
+async function generatePlan() {
+  const name = document.getElementById('f-name').value.trim() || 'My';
+  const start = document.getElementById('f-start').value;
+  const weeks = parseInt(document.getElementById('f-weeks').value) || 4;
+  const hours = parseFloat(document.getElementById('f-hours').value) || 3;
+  const goal = document.getElementById('f-goal').value.trim();
+  const focus = getChipValues('chips-focus');
+  const level = document.getElementById('f-level').value;
+  const constraint = document.getElementById('f-constraint').value.trim();
+  const style = getChipValues('chips-style') || 'balanced';
+
+
+  document.getElementById('error-box').style.display = 'none';
+
+  if (!goal) return showError('Please describe your goal.');
+
+  if (!start) return showError('Please pick a start date.');
+
+  document.getElementById('btn-gen').disabled = true;
+
+  const totalDays = weeks * 7;
+  const startDate = new Date(start);
+
+  showLoading();
+  resetSteps();
+  animateSteps();
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, goal, focus, level, weeks, hours, style, constraint })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error. Please try again.');
+
+    const days = data.days;
+    if (!Array.isArray(days) || days.length === 0) throw new Error('AI returned an empty plan. Please try again.');
+
+    clearInterval(stepTimer);
+    buildTracker(name, goal, weeks, startDate, days);
+
+  } catch(e) {
+    clearInterval(stepTimer);
+    showForm();
+    document.getElementById('btn-gen').disabled = false;
+    showError('Error: ' + (e.message || 'Something went wrong. Please try again.'));
+  }
+}
+
+// ── TRACKER STATE ──
+let DAYS = [];
+let CATEGORIES = [];
+let completed = [];
+let TOTAL_XP = 0;
+let trackerName = '';
+let trackerGoal = '';
+
+const LEVEL_NAMES = ['','Apprentice','Practitioner','Engineer','Architect','Master'];
+const LEVEL_THRESHOLDS = [0,0,500,1200,2000,2800];
+const CAT_CLASSES = ['c1','c2','c3','c4'];
+const CAT_COLORS = ['#AFA9EC','#5DCAA5','#F0997B','#FAC775'];
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function buildTracker(name, goal, weeks, startDate, days) {
+  DAYS = days;
+  trackerName = name;
+  trackerGoal = goal;
+  completed = [];
+
+  // Derive categories
+  const catSet = [];
+  days.forEach(d => {
+    if (d.category && !catSet.includes(d.category)) catSet.push(d.category);
+  });
+  CATEGORIES = catSet.slice(0, 4);
+
+  TOTAL_XP = days.reduce((s, d) => s + (d.xp || 75), 0);
+
+  // Header
+  document.getElementById('tr-title').textContent = name + "'s Quest";
+  document.getElementById('tr-pill').textContent = weeks + '-week plan';
+  document.getElementById('tr-subtitle').textContent = goal.length > 80 ? goal.slice(0, 80) + '…' : goal;
+
+  // Build legend
+  const legend = document.getElementById('legend');
+  legend.innerHTML = CATEGORIES.map((cat, i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${CAT_COLORS[i]}"></div>${cat}</div>`
+  ).join('');
+
+  // Assign dates
+  DAYS = days.map((d, i) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    return {
+      ...d,
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      dow: DOW[date.getDay()]
+    };
+  });
+
+  updateStats();
+  buildHeatmap();
+  buildDays(startDate);
+  showTracker();
+}
+
+function getCatClass(cat) {
+  const i = CATEGORIES.indexOf(cat);
+  return i >= 0 ? CAT_CLASSES[i] : 'c4';
+}
+
+function getXP() { return DAYS.reduce((s,d,i) => completed.includes(i) ? s+(d.xp||75) : s, 0); }
+
+function getLevel(xp) {
+  if (xp >= 2800) return 5;
+  if (xp >= 2000) return 4;
+  if (xp >= 1200) return 3;
+  if (xp >= 500)  return 2;
+  return 1;
+}
+
+function getStreak() {
+  let streak = 0;
+  for (let i = DAYS.length - 1; i >= 0; i--) {
+    if (completed.includes(i)) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function updateStats() {
+  const xp = getXP();
+  const level = getLevel(xp);
+  const nextXP = LEVEL_THRESHOLDS[level+1] || TOTAL_XP;
+  const pct = TOTAL_XP > 0 ? Math.round((xp / TOTAL_XP) * 100) : 0;
+  document.getElementById('xp-current').textContent = xp;
+  document.getElementById('xp-total-display').textContent = xp;
+  document.getElementById('level-num').textContent = level;
+  document.getElementById('level-title').textContent = LEVEL_NAMES[level];
+  document.getElementById('next-level-xp').textContent = nextXP;
+  document.getElementById('xp-fill').style.width = pct + '%';
+  document.getElementById('stat-streak').textContent = getStreak();
+  document.getElementById('stat-done').textContent = completed.length;
+  document.getElementById('stat-pct').textContent = pct + '%';
+}
+
+function buildHeatmap() {
+  const grid = document.getElementById('heatmap');
+  grid.innerHTML = '';
+  DAYS.forEach((d, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'heat-cell';
+    if (completed.includes(i)) cell.classList.add('done-' + getCatClass(d.category));
+    cell.title = d.date + ' — ' + d.title;
+    cell.textContent = d.date ? d.date.split(' ')[1] : (i+1);
+    cell.onclick = () => toggleDay(i);
+    grid.appendChild(cell);
+  });
+}
+
+function toggleDay(i) {
+  if (completed.includes(i)) completed = completed.filter(x => x !== i);
+  else completed.push(i);
+  updateStats();
+  buildHeatmap();
+  buildDays();
+}
+
+function buildDays() {
+  const container = document.getElementById('days-container');
+  container.innerHTML = '';
+  DAYS.forEach((d, i) => {
+    if (i % 7 === 0) {
+      const label = document.createElement('div');
+      label.className = 'week-label';
+      label.textContent = 'Week ' + (Math.floor(i/7)+1);
+      container.appendChild(label);
+    }
+
+    const card = document.createElement('div');
+    card.className = 'day-card' + (completed.includes(i) ? ' completed' : '');
+
+    const check = document.createElement('button');
+    check.className = 'day-check' + (completed.includes(i) ? ' checked' : '');
+    check.setAttribute('aria-label', 'Mark day complete');
+    check.innerHTML = '<div class="checkmark"></div>';
+    check.onclick = () => toggleDay(i);
+
+    const dayNum = document.createElement('div');
+    dayNum.className = 'day-num';
+    const dateParts = (d.date || '').split(' ');
+    dayNum.innerHTML = `<span class="num">${dateParts[1] || (i+1)}</span><span class="dow">${dateParts[0] || ''}<br>${d.dow || ''}</span>`;
+
+    const catClass = getCatClass(d.category);
+    const body = document.createElement('div');
+    body.className = 'day-body';
+    body.innerHTML =
+      `<div class="day-badges"><span class="badge badge-${catClass}">${d.category || 'Task'}</span>${d.isReview ? '<span class="badge badge-c4">Review</span>' : ''}</div>` +
+      `<div class="day-title">${d.title}</div>` +
+      `<div class="day-tasks">${d.tasks}</div>` +
+      `<div class="day-xp">⚡ +${d.xp || 75} XP</div>`;
+
+    card.appendChild(check);
+    card.appendChild(dayNum);
+    card.appendChild(body);
+    container.appendChild(card);
+  });
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('visible'));
+  document.querySelector(`.tab[onclick="switchTab('${name}')"]`).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('visible');
+}
+
+// ── DOWNLOAD ──
+function downloadTracker() {
+  const title = trackerName + "'s Quest";
+  const subtitle = trackerGoal.length > 80 ? trackerGoal.slice(0,80) + '…' : trackerGoal;
+  const daysJson = JSON.stringify(DAYS);
+  const cats = JSON.stringify(CATEGORIES);
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title}</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary: #ffffff; --bg-secondary: #f5f5f4; --bg-tertiary: #eeede9;
+    --text-primary: #1a1a18; --text-secondary: #6b6b67; --text-tertiary: #9c9c98;
+    --border-light: rgba(0,0,0,0.1); --border-mid: rgba(0,0,0,0.18);
+    --radius-md: 8px; --radius-lg: 12px;
+    --purple: #7F77DD; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #1D9E75; --teal-light: #E1F5EE; --teal-dark: #085041;
+    --coral: #D85A30; --coral-light: #FAECE7; --coral-dark: #712B13;
+    --amber: #BA7517; --amber-light: #FAEEDA; --amber-dark: #633806;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1e1e1c; --bg-secondary: #2a2a28; --bg-tertiary: #333330;
+      --text-primary: #f0efeb; --text-secondary: #a0a09c; --text-tertiary: #6b6b68;
+      --border-light: rgba(255,255,255,0.1); --border-mid: rgba(255,255,255,0.18);
+      --purple-light: #26215C; --purple-dark: #CECBF6;
+      --teal-light: #04342C; --teal-dark: #9FE1CB;
+      --coral-light: #4A1B0C; --coral-dark: #F5C4B3;
+      --amber-light: #412402; --amber-dark: #FAC775;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-tertiary); color: var(--text-primary); min-height: 100vh; }
+  .container { max-width: 740px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .header { padding: 0 0 1.5rem; }
+  .title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+  .title-text { font-size: 24px; font-weight: 600; }
+  .pill { font-size: 11px; padding: 3px 10px; background: var(--purple-light); color: var(--purple-dark); border-radius: 99px; font-weight: 500; }
+  .subtitle { font-size: 14px; color: var(--text-secondary); }
+  .xp-bar-wrap { margin: 1.25rem 0; }
+  .xp-label-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .xp-track { background: var(--bg-secondary); border-radius: 99px; height: 10px; border: 0.5px solid var(--border-light); overflow: hidden; }
+  .xp-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width 0.4s ease; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 1rem 0; }
+  .stat-card { background: var(--bg-primary); border-radius: var(--radius-md); padding: 12px; text-align: center; border: 0.5px solid var(--border-light); }
+  .stat-num { font-size: 22px; font-weight: 600; }
+  .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+  .section-block { background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border-light); padding: 1.25rem; margin: 1.25rem 0; }
+  .section-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .heatmap-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+  .heat-cell { aspect-ratio: 1; border-radius: 4px; border: 0.5px solid var(--border-light); background: var(--bg-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-tertiary); transition: transform 0.1s; font-weight: 500; }
+  .heat-cell:hover { transform: scale(1.1); }
+  .heat-cell.done-c1 { background: #AFA9EC; border-color: var(--purple); color: var(--purple-dark); }
+  .heat-cell.done-c2 { background: #5DCAA5; border-color: var(--teal); color: var(--teal-dark); }
+  .heat-cell.done-c3 { background: #F0997B; border-color: var(--coral); color: var(--coral-dark); }
+  .heat-cell.done-c4 { background: #FAC775; border-color: var(--amber); color: var(--amber-dark); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .week-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); padding: 8px 0 6px; border-bottom: 0.5px solid var(--border-light); margin: 1.25rem 0 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .day-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 12px; align-items: flex-start; transition: opacity 0.2s; }
+  .day-card.completed { opacity: 0.55; }
+  .day-num { min-width: 38px; text-align: center; flex-shrink: 0; }
+  .day-num .num { font-size: 18px; font-weight: 600; display: block; line-height: 1.2; }
+  .day-num .dow { font-size: 10px; color: var(--text-tertiary); }
+  .day-body { flex: 1; min-width: 0; }
+  .day-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 5px; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+  .badge-c1 { background: var(--purple-light); color: var(--purple-dark); }
+  .badge-c2 { background: var(--teal-light); color: var(--teal-dark); }
+  .badge-c3 { background: var(--coral-light); color: var(--coral-dark); }
+  .badge-c4 { background: var(--amber-light); color: var(--amber-dark); }
+  .day-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .day-tasks { font-size: 12px; color: var(--text-secondary); line-height: 1.65; }
+  .day-xp { font-size: 11px; color: var(--purple); font-weight: 500; margin-top: 6px; }
+  .day-check { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--border-mid); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: all 0.2s; margin-top: 1px; background: none; }
+  .day-check:hover { border-color: var(--purple); }
+  .day-check.checked { background: var(--purple); border-color: var(--purple); }
+  .checkmark { display: none; width: 10px; height: 7px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translateY(-1px); }
+  .day-check.checked .checkmark { display: block; }
+  @media (max-width: 520px) { .stats-row { grid-template-columns: repeat(2,1fr); } .heatmap-grid { grid-template-columns: repeat(6,1fr); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title-row">
+      <span class="title-text">${title}</span>
+      <span class="pill" id="tr-pill-dl"></span>
+    </div>
+    <div class="subtitle">${subtitle}</div>
+  </div>
+  <div class="xp-bar-wrap">
+    <div class="xp-label-row">
+      <span>Level <strong id="level-num">1</strong> — <span id="level-title">Apprentice</span></span>
+      <span><span id="xp-total-display">0</span> / <span id="next-level-xp">500</span> XP</span>
+    </div>
+    <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num" id="xp-current">0</div><div class="stat-label">XP earned</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">Day streak 🔥</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Days done</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-pct">0%</div><div class="stat-label">Complete</div></div>
+  </div>
+  <div class="section-block">
+    <div class="section-title">Progress Heatmap</div>
+    <div class="heatmap-grid" id="heatmap"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div id="days-container"></div>
+</div>
+<script>
+const DAYS = ${daysJson};
+const CATEGORIES = ${cats};
+const CAT_CLASSES = ['c1','c2','c3','c4'];
+const CAT_COLORS = ['#AFA9EC','#5DCAA5','#F0997B','#FAC775'];
+const LEVEL_NAMES = ['','Apprentice','Practitioner','Engineer','Architect','Master'];
+const LEVEL_THRESHOLDS = [0,0,500,1200,2000,2800];
+const TOTAL_XP = DAYS.reduce((s,d)=>s+(d.xp||75),0);
+let completed = [];
+try { completed = JSON.parse(localStorage.getItem('quest_${Date.now()}') || '[]'); } catch(e){}
+const SAVE_KEY = 'quest_progress_${trackerName.replace(/\s/g,'_')}';
+try { completed = JSON.parse(localStorage.getItem(SAVE_KEY)||'[]'); } catch(e){}
+function save(){ try{localStorage.setItem(SAVE_KEY, JSON.stringify(completed));}catch(e){} }
+function getCatClass(cat){ const i=CATEGORIES.indexOf(cat); return i>=0?CAT_CLASSES[i]:'c4'; }
+function getXP(){ return DAYS.reduce((s,d,i)=>completed.includes(i)?s+(d.xp||75):s,0); }
+function getLevel(xp){ if(xp>=2800)return 5;if(xp>=2000)return 4;if(xp>=1200)return 3;if(xp>=500)return 2;return 1; }
+function getStreak(){ let s=0; for(let i=DAYS.length-1;i>=0;i--){ if(completed.includes(i))s++;else break; } return s; }
+function updateStats(){
+  const xp=getXP(),level=getLevel(xp),nextXP=LEVEL_THRESHOLDS[level+1]||TOTAL_XP,pct=Math.round((xp/TOTAL_XP)*100);
+  document.getElementById('xp-current').textContent=xp;
+  document.getElementById('xp-total-display').textContent=xp;
+  document.getElementById('level-num').textContent=level;
+  document.getElementById('level-title').textContent=LEVEL_NAMES[level];
+  document.getElementById('next-level-xp').textContent=nextXP;
+  document.getElementById('xp-fill').style.width=pct+'%';
+  document.getElementById('stat-streak').textContent=getStreak();
+  document.getElementById('stat-done').textContent=completed.length;
+  document.getElementById('stat-pct').textContent=pct+'%';
+  document.getElementById('tr-pill-dl').textContent=DAYS.length+'-day plan';
+}
+function buildHeatmap(){
+  const grid=document.getElementById('heatmap'); grid.innerHTML='';
+  DAYS.forEach((d,i)=>{
+    const cell=document.createElement('div'); cell.className='heat-cell';
+    if(completed.includes(i)) cell.classList.add('done-'+getCatClass(d.category));
+    cell.title=(d.date||'Day '+(i+1))+' — '+d.title;
+    cell.textContent=d.date?(d.date.split(' ')[1]||i+1):(i+1);
+    cell.onclick=()=>toggleDay(i); grid.appendChild(cell);
+  });
+}
+function toggleDay(i){ if(completed.includes(i))completed=completed.filter(x=>x!==i);else completed.push(i);save();updateStats();buildHeatmap();buildDays(); }
+function buildDays(){
+  const c=document.getElementById('days-container'); c.innerHTML='';
+  document.getElementById('legend').innerHTML=CATEGORIES.map((cat,i)=>
+    '<div class="legend-item"><div class="legend-dot" style="background:'+CAT_COLORS[i]+'"></div>'+cat+'</div>').join('');
+  DAYS.forEach((d,i)=>{
+    if(i%7===0){const lbl=document.createElement('div');lbl.className='week-label';lbl.textContent='Week '+(Math.floor(i/7)+1);c.appendChild(lbl);}
+    const card=document.createElement('div'); card.className='day-card'+(completed.includes(i)?' completed':'');
+    const check=document.createElement('button'); check.className='day-check'+(completed.includes(i)?' checked':'');
+    check.innerHTML='<div class="checkmark"></div>'; check.onclick=()=>toggleDay(i);
+    const dayNum=document.createElement('div'); dayNum.className='day-num';
+    const dp=(d.date||'').split(' '); dayNum.innerHTML='<span class="num">'+(dp[1]||i+1)+'</span><span class="dow">'+(dp[0]||'')+'<br>'+(d.dow||'')+'</span>';
+    const cc=getCatClass(d.category); const body=document.createElement('div'); body.className='day-body';
+    body.innerHTML='<div class="day-badges"><span class="badge badge-'+cc+'">'+(d.category||'Task')+'</span>'+(d.isReview?'<span class="badge badge-c4">Review</span>':'')+'</div><div class="day-title">'+d.title+'</div><div class="day-tasks">'+d.tasks+'</div><div class="day-xp">⚡ +'+(d.xp||75)+' XP</div>';
+    card.appendChild(check); card.appendChild(dayNum); card.appendChild(body); c.appendChild(card);
+  });
+}
+buildHeatmap(); buildDays(); updateStats();
+<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (trackerName.toLowerCase().replace(/\s+/g,'_') || 'my') + '_quest_tracker.html';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Init
+showLanding();
+</script>
+</body>
+</html>
