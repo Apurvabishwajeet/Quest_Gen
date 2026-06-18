@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QuestGen — Build Your Personal Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -59,6 +60,184 @@
     color: var(--text-primary);
     min-height: 100vh;
   }
+
+  /* ── AUTH WIDGET (top corner) ── */
+  #auth-widget {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 50;
+  }
+  .auth-btn-signin {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-mid);
+    color: var(--text-primary);
+    padding: 8px 18px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .auth-btn-signin:hover { opacity: 0.85; }
+  .auth-user-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-mid);
+    border-radius: 99px;
+    padding: 6px 8px 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    position: relative;
+  }
+  .auth-avatar {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--purple);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .auth-user-email { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
+  .auth-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-mid);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    min-width: 170px;
+    display: none;
+    overflow: hidden;
+  }
+  .auth-dropdown.open { display: block; }
+  .auth-dropdown-item {
+    padding: 10px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-primary);
+    border-bottom: 0.5px solid var(--border-light);
+  }
+  .auth-dropdown-item:last-child { border-bottom: none; }
+  .auth-dropdown-item:hover { background: var(--bg-secondary); }
+
+  /* ── AUTH MODAL ── */
+  .auth-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 1rem;
+  }
+  .auth-modal-overlay.open { display: flex; }
+  .auth-modal {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.75rem;
+    width: 100%;
+    max-width: 380px;
+    position: relative;
+  }
+  .auth-modal-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: none; border: none;
+    font-size: 18px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+  }
+  .auth-modal-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .auth-modal-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+  .auth-field { margin-bottom: 12px; }
+  .auth-field label { font-size: 12px; font-weight: 500; color: var(--text-secondary); display: block; margin-bottom: 5px; }
+  .auth-field input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-mid);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .auth-field input:focus { outline: 1.5px solid var(--purple); }
+  .auth-submit-btn {
+    width: 100%;
+    background: var(--purple);
+    color: white;
+    border: none;
+    padding: 11px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 6px;
+  }
+  .auth-submit-btn:hover { opacity: 0.9; }
+  .auth-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .auth-divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 1.1rem 0;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-light); }
+  .auth-google-btn {
+    width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-mid);
+    padding: 10px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .auth-google-btn:hover { background: var(--bg-secondary); }
+  .auth-switch-row { text-align: center; margin-top: 1.1rem; font-size: 13px; color: var(--text-secondary); }
+  .auth-switch-link { color: var(--purple); cursor: pointer; font-weight: 600; }
+  .auth-error { font-size: 12px; color: var(--coral-dark); margin-top: 8px; min-height: 0; }
+  .auth-loading { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+
+  /* ── MY TRACKERS PAGE ── */
+  #page-mytrackers {
+    display: none;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 5rem 1.5rem 3rem;
+  }
+  .mt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .mt-title { font-size: 24px; font-weight: 700; }
+  .mt-back { background: none; border: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; font-family: inherit; }
+  .mt-empty { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
+  .mt-card {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-mid);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .mt-card:hover { background: var(--bg-secondary); }
+  .mt-card-title { font-weight: 600; font-size: 15px; margin-bottom: 3px; }
+  .mt-card-sub { font-size: 12.5px; color: var(--text-secondary); }
+  .mt-card-meta { font-size: 11.5px; color: var(--text-tertiary); text-align: right; flex-shrink: 0; }
+  .mt-delete-btn { background:none;border:none;color:var(--text-tertiary);font-size:14px;cursor:pointer;padding:4px; }
+  .mt-delete-btn:hover { color: var(--coral-dark); }
 
   /* ── LANDING PAGE ── */
   #page-landing {
@@ -442,6 +621,51 @@
 </head>
 <body>
 
+<!-- ══ AUTH WIDGET (top corner) ══ -->
+<div id="auth-widget">
+  <button class="auth-btn-signin" id="auth-signin-btn" onclick="openAuthModal()">Sign in</button>
+  <div class="auth-user-chip" id="auth-user-chip" style="display:none;" onclick="toggleUserDropdown()">
+    <div class="auth-avatar" id="auth-avatar">?</div>
+    <span class="auth-user-email" id="auth-user-email"></span>
+    <div class="auth-dropdown" id="auth-dropdown">
+      <div class="auth-dropdown-item" onclick="event.stopPropagation(); goToMyTrackers()">📋 My Trackers</div>
+      <div class="auth-dropdown-item" onclick="event.stopPropagation(); handleLogout()">🚪 Log out</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AUTH MODAL ══ -->
+<div class="auth-modal-overlay" id="auth-modal-overlay" onclick="if(event.target===this) closeAuthModal()">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    <div class="auth-modal-title" id="auth-modal-title">Welcome back</div>
+    <div class="auth-modal-sub" id="auth-modal-sub">Sign in to save and access your trackers anywhere.</div>
+
+    <button class="auth-google-btn" onclick="handleGoogleLogin()">
+      <span>🔵</span> Continue with Google
+    </button>
+
+    <div class="auth-divider">OR</div>
+
+    <form id="auth-form" onsubmit="event.preventDefault(); handleEmailAuth();">
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="auth-email" required placeholder="you@example.com" />
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="auth-password" required placeholder="••••••••" minlength="6" />
+      </div>
+      <button type="submit" class="auth-submit-btn" id="auth-submit-btn">Sign in</button>
+      <div class="auth-error" id="auth-error"></div>
+    </form>
+
+    <div class="auth-switch-row" id="auth-switch-row">
+      Don't have an account? <span class="auth-switch-link" onclick="toggleAuthMode()">Sign up</span>
+    </div>
+  </div>
+</div>
+
 <!-- ══ PAGE 1: LANDING ══ -->
 <div id="page-landing">
   <div class="logo-mark">⚡</div>
@@ -610,13 +834,140 @@
   </div>
 </div>
 
+<!-- ══ PAGE: MY TRACKERS ══ -->
+<div id="page-mytrackers">
+  <div class="mt-header">
+    <div class="mt-title">My Trackers</div>
+    <button class="mt-back" onclick="showLanding()">← Back</button>
+  </div>
+  <div id="mt-list"></div>
+</div>
+
 <script>
+// ══════════════════ AUTH ══════════════════
+const SUPABASE_URL = 'https://amumlpeilchgfghgqbzu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_mBtl65lzkky-3JVfQlc5ng_QoaWMeqy';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let authMode = 'signin'; // 'signin' | 'signup'
+
+function openAuthModal() {
+  document.getElementById('auth-modal-overlay').classList.add('open');
+  document.getElementById('auth-error').textContent = '';
+}
+function closeAuthModal() {
+  document.getElementById('auth-modal-overlay').classList.remove('open');
+}
+
+function toggleAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  const title = document.getElementById('auth-modal-title');
+  const sub = document.getElementById('auth-modal-sub');
+  const submitBtn = document.getElementById('auth-submit-btn');
+  const switchRow = document.getElementById('auth-switch-row');
+  document.getElementById('auth-error').textContent = '';
+
+  if (authMode === 'signup') {
+    title.textContent = 'Create your account';
+    sub.textContent = 'Sign up to save your trackers and access them anywhere.';
+    submitBtn.textContent = 'Sign up';
+    switchRow.innerHTML = 'Already have an account? <span class="auth-switch-link" onclick="toggleAuthMode()">Sign in</span>';
+  } else {
+    title.textContent = 'Welcome back';
+    sub.textContent = 'Sign in to save and access your trackers anywhere.';
+    submitBtn.textContent = 'Sign in';
+    switchRow.innerHTML = "Don't have an account? <span class=\"auth-switch-link\" onclick=\"toggleAuthMode()\">Sign up</span>";
+  }
+}
+
+async function handleEmailAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errorBox = document.getElementById('auth-error');
+  const submitBtn = document.getElementById('auth-submit-btn');
+  errorBox.textContent = '';
+  submitBtn.disabled = true;
+  submitBtn.textContent = authMode === 'signup' ? 'Signing up…' : 'Signing in…';
+
+  try {
+    let result;
+    if (authMode === 'signup') {
+      result = await sb.auth.signUp({ email, password });
+    } else {
+      result = await sb.auth.signInWithPassword({ email, password });
+    }
+    if (result.error) {
+      errorBox.textContent = result.error.message;
+    } else if (authMode === 'signup' && !result.data.session) {
+      errorBox.style.color = 'var(--teal-dark)';
+      errorBox.textContent = 'Check your email to confirm your account, then sign in.';
+    } else {
+      closeAuthModal();
+    }
+  } catch (e) {
+    errorBox.textContent = 'Something went wrong. Please try again.';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = authMode === 'signup' ? 'Sign up' : 'Sign in';
+  }
+}
+
+async function handleGoogleLogin() {
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin }
+  });
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  toggleUserDropdown(false);
+  showLanding();
+}
+
+function toggleUserDropdown(forceState) {
+  const dd = document.getElementById('auth-dropdown');
+  if (forceState === false) { dd.classList.remove('open'); return; }
+  dd.classList.toggle('open');
+}
+document.addEventListener('click', (e) => {
+  const chip = document.getElementById('auth-user-chip');
+  if (chip && !chip.contains(e.target)) toggleUserDropdown(false);
+});
+
+function updateAuthWidget(user) {
+  currentUser = user;
+  const signinBtn = document.getElementById('auth-signin-btn');
+  const userChip = document.getElementById('auth-user-chip');
+  if (user) {
+    signinBtn.style.display = 'none';
+    userChip.style.display = 'flex';
+    const email = user.email || 'User';
+    document.getElementById('auth-user-email').textContent = email;
+    document.getElementById('auth-avatar').textContent = email.charAt(0).toUpperCase();
+  } else {
+    signinBtn.style.display = 'inline-block';
+    userChip.style.display = 'none';
+  }
+}
+
+// Keep auth state in sync across reloads / login / logout
+sb.auth.onAuthStateChange((event, session) => {
+  updateAuthWidget(session ? session.user : null);
+});
+// Check session immediately on load
+sb.auth.getSession().then(({ data }) => {
+  updateAuthWidget(data.session ? data.session.user : null);
+});
+
 // ── NAVIGATION ──
 function showLanding() {
   document.getElementById('page-landing').style.display = 'flex';
   document.getElementById('page-form').style.display = 'none';
   document.getElementById('page-loading').style.display = 'none';
   document.getElementById('page-tracker').style.display = 'none';
+  document.getElementById('page-mytrackers').style.display = 'none';
 }
 
 function showForm() {
@@ -624,6 +975,7 @@ function showForm() {
   document.getElementById('page-form').style.display = 'block';
   document.getElementById('page-loading').style.display = 'none';
   document.getElementById('page-tracker').style.display = 'none';
+  document.getElementById('page-mytrackers').style.display = 'none';
   // Set default start date to today
   if (!document.getElementById('f-start').value) {
     document.getElementById('f-start').valueAsDate = new Date();
@@ -635,6 +987,7 @@ function showLoading() {
   document.getElementById('page-form').style.display = 'none';
   document.getElementById('page-loading').style.display = 'flex';
   document.getElementById('page-tracker').style.display = 'none';
+  document.getElementById('page-mytrackers').style.display = 'none';
 }
 
 function showTracker() {
@@ -642,6 +995,89 @@ function showTracker() {
   document.getElementById('page-form').style.display = 'none';
   document.getElementById('page-loading').style.display = 'none';
   document.getElementById('page-tracker').style.display = 'block';
+  document.getElementById('page-mytrackers').style.display = 'none';
+}
+
+async function goToMyTrackers() {
+  toggleUserDropdown(false);
+  if (!currentUser) { openAuthModal(); return; }
+  document.getElementById('page-landing').style.display = 'none';
+  document.getElementById('page-form').style.display = 'none';
+  document.getElementById('page-loading').style.display = 'none';
+  document.getElementById('page-tracker').style.display = 'none';
+  document.getElementById('page-mytrackers').style.display = 'block';
+
+  const list = document.getElementById('mt-list');
+  list.innerHTML = '<div class="mt-empty">Loading…</div>';
+
+  const { data, error } = await sb.from('trackers')
+    .select('id, title, subtitle, days, updated_at')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    list.innerHTML = '<div class="mt-empty">Could not load trackers. Please try again.</div>';
+    return;
+  }
+  if (!data || data.length === 0) {
+    list.innerHTML = '<div class="mt-empty">No saved trackers yet. Build one from the home page!</div>';
+    return;
+  }
+
+  list.innerHTML = data.map(t => {
+    const dayCount = Array.isArray(t.days) ? t.days.length : 0;
+    const updated = new Date(t.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `
+      <div class="mt-card" onclick="resumeTracker('${t.id}')">
+        <div>
+          <div class="mt-card-title">${escapeHtml(t.title || 'Untitled Quest')}</div>
+          <div class="mt-card-sub">${escapeHtml((t.subtitle || '').slice(0, 60))}</div>
+        </div>
+        <div class="mt-card-meta">
+          ${dayCount} days<br/>${updated}
+          <div><button class="mt-delete-btn" onclick="event.stopPropagation(); deleteTracker('${t.id}')">Delete</button></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+async function resumeTracker(id) {
+  const { data, error } = await sb.from('trackers').select('*').eq('id', id).single();
+  if (error || !data) { alert('Could not load this tracker.'); return; }
+
+  currentTrackerId = data.id;
+  DAYS = data.days || [];
+  CATEGORIES = data.categories || [];
+  completed = data.completed || [];
+  trackerName = (data.title || '').replace(/'s Quest$/, '');
+  trackerGoal = data.subtitle || '';
+  TOTAL_XP = DAYS.reduce((s, d) => s + (d.xp || 75), 0);
+
+  document.getElementById('tr-title').textContent = (data.title || 'My Quest');
+  document.getElementById('tr-pill').textContent = Math.ceil(DAYS.length / 7) + '-week plan';
+  document.getElementById('tr-subtitle').textContent = trackerGoal.length > 80 ? trackerGoal.slice(0, 80) + '…' : trackerGoal;
+
+  const legend = document.getElementById('legend');
+  legend.innerHTML = CATEGORIES.map((cat, i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${CAT_COLORS[i]}"></div>${cat}</div>`
+  ).join('');
+
+  updateStats();
+  buildHeatmap();
+  buildDays();
+  showTracker();
+}
+
+async function deleteTracker(id) {
+  if (!confirm('Delete this tracker permanently?')) return;
+  const { error } = await sb.from('trackers').delete().eq('id', id);
+  if (error) { alert('Could not delete. Please try again.'); return; }
+  goToMyTrackers();
 }
 
 // ── CHIPS ──
@@ -749,6 +1185,60 @@ let CATEGORIES = [];
 let completed = [];
 let TOTAL_XP = 0;
 let trackerName = '';
+let currentTrackerId = null;
+let saveDebounceTimer = null;
+
+function setSaveStatus(text, isError) {
+  let el = document.getElementById('save-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'save-status';
+    el.style.cssText = 'position:fixed;bottom:20px;right:20px;font-size:13px;font-weight:600;color:white;padding:9px 16px;border-radius:99px;z-index:60;transition:opacity 0.25s, transform 0.25s;box-shadow:0 6px 20px rgba(0,0,0,0.18);display:flex;align-items:center;gap:6px;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  const icon = isError ? '⚠️' : (text.includes('Saving') ? '⏳' : '✓');
+  el.style.background = isError ? '#E0654F' : 'var(--purple, #6C5CE7)';
+  el.innerHTML = text ? (icon + ' ' + text) : '';
+  el.style.opacity = text ? '1' : '0';
+  el.style.transform = text ? 'translateY(0)' : 'translateY(8px)';
+}
+
+async function saveTrackerToCloud(immediate) {
+  if (!currentUser) return; // only save for logged-in users
+  clearTimeout(saveDebounceTimer);
+
+  const doSave = async () => {
+    setSaveStatus('Saving…');
+    try {
+      const payload = {
+        user_id: currentUser.id,
+        title: trackerName + "'s Quest",
+        subtitle: trackerGoal || '',
+        days: DAYS,
+        categories: CATEGORIES,
+        completed: completed,
+        updated_at: new Date().toISOString()
+      };
+      if (currentTrackerId) {
+        const { error } = await sb.from('trackers').update(payload).eq('id', currentTrackerId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await sb.from('trackers').insert(payload).select('id').single();
+        if (error) throw error;
+        currentTrackerId = data.id;
+      }
+      setSaveStatus('Saved');
+      setTimeout(() => setSaveStatus(''), 1500);
+    } catch (e) {
+      console.error('Save failed:', e);
+      setSaveStatus('Save failed', true);
+      setTimeout(() => setSaveStatus(''), 2500);
+    }
+  };
+
+  if (immediate) await doSave();
+  else saveDebounceTimer = setTimeout(doSave, 600);
+}
 let trackerGoal = '';
 
 const LEVEL_NAMES = ['','Apprentice','Practitioner','Engineer','Architect','Master'];
@@ -762,6 +1252,7 @@ function buildTracker(name, goal, weeks, startDate, days) {
   trackerName = name;
   trackerGoal = goal;
   completed = [];
+  currentTrackerId = null;
 
   // Derive categories
   const catSet = [];
@@ -798,6 +1289,7 @@ function buildTracker(name, goal, weeks, startDate, days) {
   buildHeatmap();
   buildDays(startDate);
   showTracker();
+  saveTrackerToCloud(true);
 }
 
 function getCatClass(cat) {
@@ -860,6 +1352,7 @@ function toggleDay(i) {
   updateStats();
   buildHeatmap();
   buildDays();
+  saveTrackerToCloud(false);
 }
 
 function buildDays() {
