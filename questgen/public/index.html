@@ -677,7 +677,7 @@
   .xp-bar-wrap { margin: 1.25rem 0; }
   .xp-label-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
   .xp-track { background: var(--bg-secondary); border-radius: 99px; height: 10px; border: 0.5px solid var(--border-light); overflow: hidden; }
-  .xp-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width 0.4s ease; }
+  .xp-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width 0.7s cubic-bezier(0.34, 1.2, 0.64, 1); }
 
   .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 1rem 0; }
   .stat-card { background: var(--bg-primary); border-radius: var(--radius-md); padding: 12px; text-align: center; border: 0.5px solid var(--border-light); }
@@ -690,6 +690,16 @@
   .heatmap-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
   .heat-cell { aspect-ratio: 1; border-radius: 4px; border: 0.5px solid var(--border-light); background: var(--bg-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-tertiary); transition: transform 0.1s; font-weight: 500; }
   .heat-cell:hover { transform: scale(1.1); }
+
+  @keyframes heat-pop {
+  0%   { opacity: 0; transform: scale(0.5); }
+  70%  { transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.heat-cell {
+  animation: heat-pop 0.3s ease forwards;
+  opacity: 0;
+}
   .heat-cell.done-c1 { background: #AFA9EC; border-color: var(--purple); color: var(--purple-dark); }
   .heat-cell.done-c2 { background: #5DCAA5; border-color: var(--teal); color: var(--teal-dark); }
   .heat-cell.done-c3 { background: #F0997B; border-color: var(--coral); color: var(--coral-dark); }
@@ -729,6 +739,19 @@
   .day-check.checked { background: var(--purple); border-color: var(--purple); }
   .checkmark { display: none; width: 10px; height: 7px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translateY(-1px); }
   .day-check.checked .checkmark { display: block; }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 9999;
+    animation: confetti-fall 0.9s ease-in forwards;
+  }
+  @keyframes confetti-fall {
+    0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+    100% { transform: translateY(120px) rotate(520deg) scale(0.4); opacity: 0; }
+  }
 
   .tracker-toolbar {
     display: flex;
@@ -987,7 +1010,7 @@
 
     <div class="stats-row">
       <div class="stat-card"><div class="stat-num" id="xp-current">0</div><div class="stat-label">XP earned</div></div>
-      <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">Day streak 🔥</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">Max Day streak 🔥</div></div>
       <div class="stat-card"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Days done</div></div>
       <div class="stat-card"><div class="stat-num" id="stat-pct">0%</div><div class="stat-label">Complete</div></div>
     </div>
@@ -1482,12 +1505,19 @@ function getLevel(xp) {
 }
 
 function getStreak() {
-  let streak = 0;
-  for (let i = DAYS.length - 1; i >= 0; i--) {
-    if (completed.includes(i)) streak++;
-    else break;
+  if (completed.length === 0) return 0;
+  const sorted = [...completed].sort((a, b) => a - b);
+  let streak = 1;
+  let best = 1;
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] === sorted[i-1] + 1) {
+      streak++;
+      best = Math.max(best, streak);
+    } else {
+      streak = 1;
+    }
   }
-  return streak;
+  return best;
 }
 
 function updateStats() {
@@ -1500,7 +1530,16 @@ function updateStats() {
   document.getElementById('level-num').textContent = level;
   document.getElementById('level-title').textContent = LEVEL_NAMES[level];
   document.getElementById('next-level-xp').textContent = nextXP;
-  document.getElementById('xp-fill').style.width = pct + '%';
+  (function() {
+    const fill = document.getElementById('xp-fill');
+    if (fill.style.width === '' || fill.style.width === '0%') {
+      fill.style.transition = 'none';
+      fill.style.width = '0%';
+      fill.getBoundingClientRect();
+      fill.style.transition = '';
+    }
+    fill.style.width = pct + '%';
+  })();
   document.getElementById('stat-streak').textContent = getStreak();
   document.getElementById('stat-done').textContent = completed.length;
   document.getElementById('stat-pct').textContent = pct + '%';
@@ -1508,6 +1547,7 @@ function updateStats() {
 
 function buildHeatmap() {
   const grid = document.getElementById('heatmap');
+  const isFirstLoad = grid.innerHTML === '';
   grid.innerHTML = '';
   DAYS.forEach((d, i) => {
     const cell = document.createElement('div');
@@ -1515,14 +1555,49 @@ function buildHeatmap() {
     if (completed.includes(i)) cell.classList.add('done-' + getCatClass(d.category));
     cell.title = d.date + ' — ' + d.title;
     cell.textContent = d.date ? d.date.split(' ')[1] : (i+1);
-    cell.onclick = () => toggleDay(i);
+    cell.onclick = () => toggleDay(i, cell);
+    if (isFirstLoad) {
+      cell.style.animationDelay = (i * 30) + 'ms';
+    } else {
+      cell.style.animation = 'none';
+      cell.style.opacity = '1';
+    }
     grid.appendChild(cell);
   });
 }
 
-function toggleDay(i) {
-  if (completed.includes(i)) completed = completed.filter(x => x !== i);
-  else completed.push(i);
+function launchConfetti(originEl) {
+  const colors = ['#7F77DD','#5DCAA5','#F0997B','#FAC775','#a78bfa','#34d399'];
+  const rect = originEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.background = colors[i % colors.length];
+    el.style.left = (cx + (Math.random() - 0.5) * 60) + 'px';
+    el.style.top = (cy + (Math.random() - 0.5) * 30) + 'px';
+    el.style.animationDelay = (Math.random() * 0.15) + 's';
+    el.style.width = (6 + Math.random() * 6) + 'px';
+    el.style.height = (6 + Math.random() * 6) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1100);
+  }
+}
+
+function toggleDay(i, checkEl) {
+  const wasCompleted = completed.includes(i);
+  if (wasCompleted) {
+    completed = completed.filter(x => x !== i);
+  } else {
+    completed.push(i);
+    if (checkEl) launchConfetti(checkEl);
+    const streak = getStreak();
+    if ([3, 7, 14, 21, 30].includes(streak)) {
+      setTimeout(() => checkEl && launchConfetti(checkEl), 200);
+      setTimeout(() => checkEl && launchConfetti(checkEl), 400);
+    }
+  }
   updateStats();
   buildHeatmap();
   buildDays();
@@ -1547,7 +1622,7 @@ function buildDays() {
     check.className = 'day-check' + (completed.includes(i) ? ' checked' : '');
     check.setAttribute('aria-label', 'Mark day complete');
     check.innerHTML = '<div class="checkmark"></div>';
-    check.onclick = () => toggleDay(i);
+    check.onclick = () => toggleDay(i, check);
 
     const dayNum = document.createElement('div');
     dayNum.className = 'day-num';
@@ -1623,7 +1698,7 @@ function downloadTracker() {
   .xp-bar-wrap { margin: 1.25rem 0; }
   .xp-label-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
   .xp-track { background: var(--bg-secondary); border-radius: 99px; height: 10px; border: 0.5px solid var(--border-light); overflow: hidden; }
-  .xp-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width 0.4s ease; }
+  .xp-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width 0.7s cubic-bezier(0.34, 1.2, 0.64, 1); }
   .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 1rem 0; }
   .stat-card { background: var(--bg-primary); border-radius: var(--radius-md); padding: 12px; text-align: center; border: 0.5px solid var(--border-light); }
   .stat-num { font-size: 22px; font-weight: 600; }
