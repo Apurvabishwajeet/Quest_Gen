@@ -248,6 +248,7 @@
 
   /* ── LANDING PAGE ── */
   #page-landing {
+    position: relative;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -255,6 +256,65 @@
     justify-content: center;
     padding: 2rem 1.25rem;
     text-align: center;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  /* Animated gradient background */
+  .landing-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background: var(--bg-tertiary);
+    background-image:
+      radial-gradient(at 15% 20%, rgba(127,119,221,0.16) 0px, transparent 55%),
+      radial-gradient(at 85% 15%, rgba(29,158,117,0.13) 0px, transparent 50%),
+      radial-gradient(at 75% 85%, rgba(216,90,48,0.12) 0px, transparent 55%),
+      radial-gradient(at 20% 80%, rgba(186,117,23,0.10) 0px, transparent 50%);
+    background-size: 180% 180%;
+    animation: gradient-drift 18s ease-in-out infinite;
+  }
+  @media (prefers-color-scheme: dark) {
+    .landing-bg {
+      background-image:
+        radial-gradient(at 15% 20%, rgba(127,119,221,0.22) 0px, transparent 55%),
+        radial-gradient(at 85% 15%, rgba(29,158,117,0.18) 0px, transparent 50%),
+        radial-gradient(at 75% 85%, rgba(216,90,48,0.16) 0px, transparent 55%),
+        radial-gradient(at 20% 80%, rgba(186,117,23,0.14) 0px, transparent 50%);
+    }
+  }
+  @keyframes gradient-drift {
+    0%   { background-position: 0% 0%; }
+    50%  { background-position: 100% 60%; }
+    100% { background-position: 0% 0%; }
+  }
+
+  /* Floating particles */
+  .landing-particles {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .particle {
+    position: absolute;
+    bottom: -20px;
+    border-radius: 50%;
+    background: var(--purple);
+    opacity: 0.18;
+    animation: float-up linear infinite;
+  }
+  @keyframes float-up {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    10%  { opacity: 0.22; }
+    90%  { opacity: 0.16; }
+    100% { transform: translateY(-100vh) translateX(var(--drift, 30px)); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing-bg { animation: none; }
+    .particle { animation: none; display: none; }
   }
 
   .logo-mark {
@@ -265,6 +325,14 @@
     font-size: 24px;
     margin: 0 auto 1.5rem;
     box-shadow: 0 4px 20px rgba(127,119,221,0.35);
+    animation: logo-pulse 3.2s ease-in-out infinite;
+  }
+  @keyframes logo-pulse {
+    0%, 100% { box-shadow: 0 4px 20px rgba(127,119,221,0.35); transform: scale(1); }
+    50% { box-shadow: 0 4px 32px rgba(127,119,221,0.6); transform: scale(1.04); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .logo-mark { animation: none; }
   }
 
   .landing-title {
@@ -317,6 +385,87 @@
     border: 0.5px solid var(--border-mid);
     color: var(--text-secondary);
     background: var(--bg-primary);
+    opacity: 0;
+    transform: translateY(8px);
+    animation: badge-in 0.45s ease forwards;
+  }
+  @keyframes badge-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lbadge { animation: none; opacity: 1; transform: none; }
+  }
+
+  /* Mock tracker preview card */
+  .landing-preview {
+    margin-top: 2.5rem;
+    width: 100%;
+    max-width: 320px;
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    animation: preview-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: 0.9s;
+  }
+  @keyframes preview-in {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .landing-preview { animation: none; opacity: 1; transform: none; }
+  }
+  .preview-caption {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+  }
+  .preview-card {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border-mid);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    text-align: left;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.10);
+  }
+  .preview-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .preview-card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .preview-card-pill { font-size: 10px; padding: 2px 8px; background: var(--purple-light); color: var(--purple-dark); border-radius: 99px; font-weight: 500; }
+  .preview-xp-label-row { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-secondary); margin-bottom: 6px; }
+  .preview-xp-track { background: var(--bg-secondary); border-radius: 99px; height: 6px; border: 0.5px solid var(--border-light); overflow: hidden; margin-bottom: 12px; }
+  .preview-xp-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--purple);
+    width: 0%;
+    animation: preview-xp-fill 1.2s ease-out forwards;
+    animation-delay: 1.3s;
+  }
+  @keyframes preview-xp-fill { to { width: 64%; } }
+  .preview-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-tertiary); padding-top: 10px; border-top: 0.5px solid var(--border-light); }
+  .preview-check {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--purple);
+    border: 1.5px solid var(--purple);
+    position: relative;
+  }
+  .preview-row.done .preview-check::after {
+    content: '';
+    position: absolute;
+    left: 4px; top: 3px;
+    width: 6px; height: 4px;
+    border-left: 1.5px solid white;
+    border-bottom: 1.5px solid white;
+    transform: rotate(-45deg);
+  }
+  .preview-row.done { text-decoration: line-through; text-decoration-color: var(--border-mid); }
+  @media (prefers-reduced-motion: reduce) {
+    .preview-xp-fill { animation: none; width: 64%; }
   }
 
   /* ── FORM PAGE ── */
@@ -675,16 +824,34 @@
 
 <!-- ══ PAGE 1: LANDING ══ -->
 <div id="page-landing">
+  <div class="landing-bg"></div>
+  <div class="landing-particles" id="landing-particles"></div>
   <div class="logo-mark">⚡</div>
   <h1 class="landing-title">Your goal.<br><span>Your quest.</span></h1>
   <p class="landing-sub">Tell us what you want to achieve. We'll build a personalized day-by-day tracker with XP, streaks, and a heatmap — just for you.</p>
   <button class="btn-primary" onclick="showForm()">Build my tracker →</button>
   <div class="landing-badges">
-    <span class="lbadge">⚡ XP & Levels</span>
-    <span class="lbadge">🔥 Streaks</span>
-    <span class="lbadge">📅 Heatmap</span>
-    <span class="lbadge">📥 Download</span>
-    <span class="lbadge">🤖 AI-generated</span>
+    <span class="lbadge" style="animation-delay:0.15s">⚡ XP & Levels</span>
+    <span class="lbadge" style="animation-delay:0.30s">🔥 Streaks</span>
+    <span class="lbadge" style="animation-delay:0.45s">📅 Heatmap</span>
+    <span class="lbadge" style="animation-delay:0.60s">📥 Download</span>
+    <span class="lbadge" style="animation-delay:0.75s">🤖 AI-generated</span>
+  </div>
+
+  <div class="landing-preview">
+    <div class="preview-caption">✨ Here's what your tracker will look like</div>
+    <div class="preview-card">
+      <div class="preview-card-head">
+        <span class="preview-card-title">Arjun's Quest</span>
+        <span class="preview-card-pill">4-week plan</span>
+      </div>
+      <div class="preview-xp-label-row">
+        <span>Level <strong>2</strong> — Practitioner</span>
+        <span>320 XP</span>
+      </div>
+      <div class="preview-xp-track"><div class="preview-xp-fill"></div></div>
+      <div class="preview-row done"><span class="preview-check"></span>Day 12 — Build first project</div>
+    </div>
   </div>
 </div>
 
@@ -1597,8 +1764,36 @@ buildHeatmap(); buildDays(); updateStats();
   URL.revokeObjectURL(url);
 }
 
+// ── LANDING PARTICLES ──
+function spawnParticles() {
+  const container = document.getElementById('landing-particles');
+  if (!container || container.dataset.spawned) return;
+  container.dataset.spawned = '1';
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion) return;
+
+  const colors = ['var(--purple)', 'var(--teal)', 'var(--coral)', 'var(--amber)'];
+  const count = window.innerWidth < 520 ? 14 : 24;
+
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 4 + Math.random() * 8;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.background = colors[i % colors.length];
+    p.style.setProperty('--drift', (Math.random() * 60 - 30) + 'px');
+    p.style.animationDuration = (10 + Math.random() * 12) + 's';
+    p.style.animationDelay = (Math.random() * 12) + 's';
+    container.appendChild(p);
+  }
+}
+
 // Init
 showLanding();
+spawnParticles();
 </script>
 </body>
 </html>
