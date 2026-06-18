@@ -666,6 +666,9 @@
   /* ── TRACKER PAGE (same design as original) ── */
   #page-tracker { display: none; }
 
+  .page { opacity: 0; transition: opacity 0.35s ease; }
+  .page.visible { opacity: 1; }
+
   .container { max-width: 740px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
 
   .header { padding: 0 0 1.5rem; }
@@ -690,16 +693,6 @@
   .heatmap-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
   .heat-cell { aspect-ratio: 1; border-radius: 4px; border: 0.5px solid var(--border-light); background: var(--bg-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-tertiary); transition: transform 0.1s; font-weight: 500; }
   .heat-cell:hover { transform: scale(1.1); }
-
-  @keyframes heat-pop {
-  0%   { opacity: 0; transform: scale(0.5); }
-  70%  { transform: scale(1.15); }
-  100% { opacity: 1; transform: scale(1); }
-}
-.heat-cell {
-  animation: heat-pop 0.3s ease forwards;
-  opacity: 0;
-}
   .heat-cell.done-c1 { background: #AFA9EC; border-color: var(--purple); color: var(--purple-dark); }
   .heat-cell.done-c2 { background: #5DCAA5; border-color: var(--teal); color: var(--teal-dark); }
   .heat-cell.done-c3 { background: #F0997B; border-color: var(--coral); color: var(--coral-dark); }
@@ -719,7 +712,8 @@
 
   .week-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); padding: 8px 0 6px; border-bottom: 0.5px solid var(--border-light); margin: 1.25rem 0 10px; text-transform: uppercase; letter-spacing: 0.04em; }
 
-  .day-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 12px; align-items: flex-start; transition: opacity 0.2s; }
+  .day-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 12px; align-items: flex-start; transition: opacity 0.2s, transform 0.2s ease, box-shadow 0.2s ease; }
+  .day-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
   .day-card.completed { opacity: 0.55; }
   .day-num { min-width: 38px; text-align: center; flex-shrink: 0; }
   .day-num .num { font-size: 18px; font-weight: 600; color: var(--text-primary); display: block; line-height: 1.2; }
@@ -846,7 +840,7 @@
 </div>
 
 <!-- ══ PAGE 1: LANDING ══ -->
-<div id="page-landing">
+<div id="page-landing" class="page">
   <div class="landing-bg"></div>
   <div class="landing-particles" id="landing-particles"></div>
   <div class="logo-mark">⚡</div>
@@ -879,7 +873,7 @@
 </div>
 
 <!-- ══ PAGE 2: FORM ══ -->
-<div id="page-form">
+<div id="page-form" class="page">
   <div class="form-wrap">
     <button class="form-back" onclick="showLanding()">← Back</button>
     <div class="form-header">
@@ -970,7 +964,7 @@
 </div>
 
 <!-- ══ PAGE 3: LOADING ══ -->
-<div id="page-loading">
+<div id="page-loading" class="page">
   <div class="spinner"></div>
   <div>
     <div class="loading-title">Building your quest…</div>
@@ -985,7 +979,7 @@
 </div>
 
 <!-- ══ PAGE 4: TRACKER ══ -->
-<div id="page-tracker">
+<div id="page-tracker" class="page">
   <div class="container">
     <div class="tracker-toolbar">
       <button class="btn-download" onclick="downloadTracker()">📥 Download as HTML</button>
@@ -1010,7 +1004,7 @@
 
     <div class="stats-row">
       <div class="stat-card"><div class="stat-num" id="xp-current">0</div><div class="stat-label">XP earned</div></div>
-      <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">Max Day streak 🔥</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-streak">0</div><div class="stat-label">Day streak 🔥</div></div>
       <div class="stat-card"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Days done</div></div>
       <div class="stat-card"><div class="stat-num" id="stat-pct">0%</div><div class="stat-label">Complete</div></div>
     </div>
@@ -1159,50 +1153,43 @@ sb.auth.getSession().then(({ data }) => {
 });
 
 // ── NAVIGATION ──
-function showLanding() {
-  document.getElementById('page-landing').style.display = 'flex';
-  document.getElementById('page-form').style.display = 'none';
-  document.getElementById('page-loading').style.display = 'none';
-  document.getElementById('page-tracker').style.display = 'none';
-  document.getElementById('page-mytrackers').style.display = 'none';
+const PAGE_DISPLAY = {
+  'page-landing': 'flex',
+  'page-form': 'block',
+  'page-loading': 'flex',
+  'page-tracker': 'block',
+  'page-mytrackers': 'block'
+};
+const ALL_PAGES = ['page-landing','page-form','page-loading','page-tracker','page-mytrackers'];
+
+function showPage(id) {
+  ALL_PAGES.forEach(p => {
+    const el = document.getElementById(p);
+    el.classList.remove('visible');
+    setTimeout(() => { if (!el.classList.contains('visible')) el.style.display = 'none'; }, 350);
+  });
+  const target = document.getElementById(id);
+  target.style.display = PAGE_DISPLAY[id] || 'block';
+  requestAnimationFrame(() => requestAnimationFrame(() => target.classList.add('visible')));
 }
 
+function showLanding() { showPage('page-landing'); }
+
 function showForm() {
-  document.getElementById('page-landing').style.display = 'none';
-  document.getElementById('page-form').style.display = 'block';
-  document.getElementById('page-loading').style.display = 'none';
-  document.getElementById('page-tracker').style.display = 'none';
-  document.getElementById('page-mytrackers').style.display = 'none';
-  // Set default start date to today
+  showPage('page-form');
   if (!document.getElementById('f-start').value) {
     document.getElementById('f-start').valueAsDate = new Date();
   }
 }
 
-function showLoading() {
-  document.getElementById('page-landing').style.display = 'none';
-  document.getElementById('page-form').style.display = 'none';
-  document.getElementById('page-loading').style.display = 'flex';
-  document.getElementById('page-tracker').style.display = 'none';
-  document.getElementById('page-mytrackers').style.display = 'none';
-}
+function showLoading() { showPage('page-loading'); }
 
-function showTracker() {
-  document.getElementById('page-landing').style.display = 'none';
-  document.getElementById('page-form').style.display = 'none';
-  document.getElementById('page-loading').style.display = 'none';
-  document.getElementById('page-tracker').style.display = 'block';
-  document.getElementById('page-mytrackers').style.display = 'none';
-}
+function showTracker() { showPage('page-tracker'); }
 
 async function goToMyTrackers() {
   toggleUserDropdown(false);
   if (!currentUser) { openAuthModal(); return; }
-  document.getElementById('page-landing').style.display = 'none';
-  document.getElementById('page-form').style.display = 'none';
-  document.getElementById('page-loading').style.display = 'none';
-  document.getElementById('page-tracker').style.display = 'none';
-  document.getElementById('page-mytrackers').style.display = 'block';
+  showPage('page-mytrackers');
 
   const list = document.getElementById('mt-list');
   list.innerHTML = '<div class="mt-empty">Loading…</div>';
@@ -1505,19 +1492,29 @@ function getLevel(xp) {
 }
 
 function getStreak() {
-  if (completed.length === 0) return 0;
-  const sorted = [...completed].sort((a, b) => a - b);
-  let streak = 1;
-  let best = 1;
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i] === sorted[i-1] + 1) {
-      streak++;
-      best = Math.max(best, streak);
-    } else {
-      streak = 1;
-    }
+  let streak = 0;
+  for (let i = 0; i < DAYS.length; i++) {
+    if (completed.includes(i)) streak++;
+    else break;
   }
-  return best;
+  return streak;
+}
+
+function countUp(elId, target, suffix) {
+  const el = document.getElementById(elId);
+  const current = parseInt(el.textContent) || 0;
+  if (current === target) { el.textContent = target + (suffix||''); return; }
+  const step = Math.ceil(Math.abs(target - current) / 12);
+  const dir = target > current ? 1 : -1;
+  let val = current;
+  const t = setInterval(() => {
+    val += dir * step;
+    if ((dir > 0 && val >= target) || (dir < 0 && val <= target)) {
+      val = target;
+      clearInterval(t);
+    }
+    el.textContent = val + (suffix||'');
+  }, 30);
 }
 
 function updateStats() {
@@ -1525,7 +1522,7 @@ function updateStats() {
   const level = getLevel(xp);
   const nextXP = LEVEL_THRESHOLDS[level+1] || TOTAL_XP;
   const pct = TOTAL_XP > 0 ? Math.round((xp / TOTAL_XP) * 100) : 0;
-  document.getElementById('xp-current').textContent = xp;
+  countUp('xp-current', xp);
   document.getElementById('xp-total-display').textContent = xp;
   document.getElementById('level-num').textContent = level;
   document.getElementById('level-title').textContent = LEVEL_NAMES[level];
@@ -1540,14 +1537,13 @@ function updateStats() {
     }
     fill.style.width = pct + '%';
   })();
-  document.getElementById('stat-streak').textContent = getStreak();
-  document.getElementById('stat-done').textContent = completed.length;
-  document.getElementById('stat-pct').textContent = pct + '%';
+  countUp('stat-streak', getStreak());
+  countUp('stat-done', completed.length);
+  countUp('stat-pct', pct, '%');
 }
 
 function buildHeatmap() {
   const grid = document.getElementById('heatmap');
-  const isFirstLoad = grid.innerHTML === '';
   grid.innerHTML = '';
   DAYS.forEach((d, i) => {
     const cell = document.createElement('div');
@@ -1556,12 +1552,6 @@ function buildHeatmap() {
     cell.title = d.date + ' — ' + d.title;
     cell.textContent = d.date ? d.date.split(' ')[1] : (i+1);
     cell.onclick = () => toggleDay(i, cell);
-    if (isFirstLoad) {
-      cell.style.animationDelay = (i * 30) + 'ms';
-    } else {
-      cell.style.animation = 'none';
-      cell.style.opacity = '1';
-    }
     grid.appendChild(cell);
   });
 }
