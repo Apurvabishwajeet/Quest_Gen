@@ -31,8 +31,9 @@ app.post('/api/generate', async (req, res) => {
   const categoryInstruction = hasMultiGoals
     ? 'The user has ' + goalsArr.length + ' distinct goals. Use EXACTLY these as your category names (you may shorten each to a few words, but keep them distinct and recognizable):\n'
       + goalsArr.map((g, i) => 'Category ' + (i + 1) + ': "' + g.slice(0, 50) + '"').join('\n')
-      + '\nEach day should have ONE primary category (the one taking the most time/focus that day), but the day\'s tasks can naturally blend in work toward other goals too. Distribute days across categories based on what each goal realistically needs — you decide the split.'
-    : 'Pick up to 4 short category names that fit the goal — be consistent across all days.';
+      + '\n\nA single day CAN cover more than one goal if it makes sense (e.g. a day might include both fitness and CFD work). When that happens, list ALL the categories that day actually covers in the "categories" array, and make sure the "tasks" field includes real, specific tasks for EVERY category listed — do not list a category and then skip its tasks. '
+      + 'Most days can focus on 1 category, but allow 2 (rarely 3) when it fits naturally. Across the full plan, make sure every goal gets adequate day coverage over the ' + totalDays + ' days based on its complexity — you decide the distribution.'
+    : 'Pick up to 4 short category names that fit the goal — be consistent across all days. Most days should have 1 category in the array; only use more if the day genuinely covers multiple distinct themes.';
 
   const prompt = `You are a personal coach. Create a day-by-day quest plan for someone with these details:
 
@@ -51,7 +52,7 @@ Return ONLY a valid JSON array (no markdown, no explanation, just raw JSON) with
 Each object must have:
 - "title": string (short day title, max 8 words)
 - "tasks": string (2-3 specific actionable tasks for the day, separated by ". ")
-- "category": string (one of the defined categories above — exact match required for consistency across days)
+- "categories": array of strings (1-3 category names from the list above that this day's tasks actually cover — every category listed must have real corresponding tasks in the "tasks" field)
 - "isReview": boolean (true for every 7th day)
 - "xp": number (50 for review days, 75 or 100 for regular days)
 
@@ -96,6 +97,16 @@ Return raw JSON array only. No text before or after.`;
     if (!Array.isArray(days) || days.length === 0) {
       return res.status(502).json({ error: 'AI returned an empty plan. Please try again.' });
     }
+
+    // Normalize: ensure every day has a "categories" array (handles cases where
+    // the model still returns the old singular "category" string field)
+    days = days.map(d => {
+      if (Array.isArray(d.categories) && d.categories.length > 0) {
+        return d;
+      }
+      const fallback = d.category ? [d.category] : ['General'];
+      return { ...d, categories: fallback };
+    });
 
     res.json({ days });
 

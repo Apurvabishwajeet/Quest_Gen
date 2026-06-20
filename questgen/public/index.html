@@ -719,7 +719,9 @@
   .subtitle { font-size: 14px; color: var(--text-secondary); }
 
   .xp-bar-wrap { margin: 1.25rem 0; }
-  .xp-label-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .xp-label-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .xp-label-row > span:last-child { font-variant-numeric: tabular-nums; font-weight: 500; color: var(--text-primary); }
+  .xp-label-row > span:last-child #next-level-xp { color: var(--text-secondary); font-weight: 400; }
   .xp-track { background: var(--bg-secondary); border-radius: 99px; height: 10px; border: 0.5px solid var(--border-light); overflow: hidden; }
   .xp-fill { height: 100%; border-radius: 99px; background: var(--purple); transition: width 0.7s cubic-bezier(0.34, 1.2, 0.64, 1); }
 
@@ -738,6 +740,9 @@
   .heat-cell.done-c2 { background: #5DCAA5; border-color: var(--teal); color: var(--teal-dark); }
   .heat-cell.done-c3 { background: #F0997B; border-color: var(--coral); color: var(--coral-dark); }
   .heat-cell.done-c4 { background: #FAC775; border-color: var(--amber); color: var(--amber-dark); }
+  .heat-cell.done-c5 { background: #7DC4E8; border-color: #2E8BC0; color: #0E4A6B; }
+  .heat-cell.done-c6 { background: #E89DD0; border-color: #C24FA0; color: #6B1E55; }
+  .heat-cell.done-mixed { background: #D8D4CC; border-color: #B5B0A8; color: #5A554C; background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0 4px, transparent 4px 8px); }
 
   .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
@@ -766,6 +771,10 @@
   .badge-c2 { background: var(--teal-light); color: var(--teal-dark); }
   .badge-c3 { background: var(--coral-light); color: var(--coral-dark); }
   .badge-c4 { background: var(--amber-light); color: var(--amber-dark); }
+  .badge-c5 { background: #E3F2FA; color: #0E4A6B; }
+  .badge-c6 { background: #FBE8F4; color: #6B1E55; }
+  .badge-mixed { background: var(--bg-secondary); color: var(--text-secondary); border: 0.5px solid var(--border-mid); }
+  .badge-review { background: var(--bg-tertiary); color: var(--text-secondary); }
   .day-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
   .day-tasks { font-size: 12px; color: var(--text-secondary); line-height: 1.65; }
   .day-xp { font-size: 11px; color: var(--purple); font-weight: 500; margin-top: 6px; }
@@ -1083,7 +1092,7 @@
     <div class="xp-bar-wrap">
       <div class="xp-label-row">
         <span>Level <strong id="level-num">1</strong> — <span id="level-title">Apprentice</span></span>
-        <span id="xp-total-display">0</span> / <span id="next-level-xp">500</span> XP
+        <span><span id="xp-total-display">0</span> / <span id="next-level-xp">500</span> XP</span>
       </div>
       <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
     </div>
@@ -1591,9 +1600,18 @@ let trackerGoal = '';
 
 const LEVEL_NAMES = ['','Apprentice','Practitioner','Engineer','Architect','Master'];
 const LEVEL_THRESHOLDS = [0,0,500,1200,2000,2800];
-const CAT_CLASSES = ['c1','c2','c3','c4'];
-const CAT_COLORS = ['#AFA9EC','#5DCAA5','#F0997B','#FAC775'];
+const CAT_CLASSES = ['c1','c2','c3','c4','c5','c6'];
+const CAT_COLORS = ['#AFA9EC','#5DCAA5','#F0997B','#FAC775','#7DC4E8','#E89DD0'];
+const MIXED_COLOR = '#B5B0A8'; // neutral grey for multi-category days
 const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// Returns a day's categories as an array, regardless of whether the data
+// uses the new "categories" array or the legacy "category" string field.
+function getDayCats(d) {
+  if (Array.isArray(d.categories) && d.categories.length > 0) return d.categories;
+  if (d.category) return [d.category];
+  return [];
+}
 
 function buildTracker(name, goal, weeks, startDate, days) {
   DAYS = days;
@@ -1602,12 +1620,12 @@ function buildTracker(name, goal, weeks, startDate, days) {
   completed = [];
   currentTrackerId = null;
 
-  // Derive categories
+  // Derive categories (supports both new "categories" array and legacy "category" string)
   const catSet = [];
   days.forEach(d => {
-    if (d.category && !catSet.includes(d.category)) catSet.push(d.category);
+    getDayCats(d).forEach(c => { if (c && !catSet.includes(c)) catSet.push(c); });
   });
-  CATEGORIES = catSet.slice(0, 4);
+  CATEGORIES = catSet.slice(0, 6);
 
   TOTAL_XP = days.reduce((s, d) => s + (d.xp || 75), 0);
 
@@ -1642,7 +1660,16 @@ function buildTracker(name, goal, weeks, startDate, days) {
 
 function getCatClass(cat) {
   const i = CATEGORIES.indexOf(cat);
-  return i >= 0 ? CAT_CLASSES[i] : 'c4';
+  return i >= 0 ? CAT_CLASSES[i] : 'c1';
+}
+
+// Returns the heatmap cell class for a day: its single category's class,
+// or 'mixed' if the day covers more than one category.
+function getDayCatClass(d) {
+  const cats = getDayCats(d);
+  if (cats.length > 1) return 'mixed';
+  if (cats.length === 1) return getCatClass(cats[0]);
+  return 'c1';
 }
 
 function getXP() { return DAYS.reduce((s,d,i) => completed.includes(i) ? s+(d.xp||75) : s, 0); }
@@ -1713,8 +1740,9 @@ function buildHeatmap() {
   DAYS.forEach((d, i) => {
     const cell = document.createElement('div');
     cell.className = 'heat-cell';
-    if (completed.includes(i)) cell.classList.add('done-' + getCatClass(d.category));
-    cell.title = d.date + ' — ' + d.title;
+    if (completed.includes(i)) cell.classList.add('done-' + getDayCatClass(d));
+    const cats = getDayCats(d);
+    cell.title = d.date + ' — ' + d.title + (cats.length > 1 ? ' (' + cats.join(' + ') + ')' : '');
     cell.textContent = d.date ? d.date.split(' ')[1] : (i+1);
     cell.onclick = () => toggleDay(i, cell);
     grid.appendChild(cell);
@@ -1784,11 +1812,12 @@ function buildDays() {
     const dateParts = (d.date || '').split(' ');
     dayNum.innerHTML = `<span class="num">${dateParts[1] || (i+1)}</span><span class="dow">${dateParts[0] || ''}<br>${d.dow || ''}</span>`;
 
-    const catClass = getCatClass(d.category);
+    const cats = getDayCats(d);
+    const badgesHtml = cats.map(c => `<span class="badge badge-${getCatClass(c)}">${c}</span>`).join('');
     const body = document.createElement('div');
     body.className = 'day-body';
     body.innerHTML =
-      `<div class="day-badges"><span class="badge badge-${catClass}">${d.category || 'Task'}</span>${d.isReview ? '<span class="badge badge-c4">Review</span>' : ''}</div>` +
+      `<div class="day-badges">${badgesHtml}${d.isReview ? '<span class="badge badge-review">Review</span>' : ''}</div>` +
       `<div class="day-title">${d.title}</div>` +
       `<div class="day-tasks">${d.tasks}</div>` +
       `<div class="day-xp">⚡ +${d.xp || 75} XP</div>`;
@@ -1866,7 +1895,7 @@ function downloadTracker() {
   .heat-cell.done-c1 { background: #AFA9EC; border-color: var(--purple); color: var(--purple-dark); }
   .heat-cell.done-c2 { background: #5DCAA5; border-color: var(--teal); color: var(--teal-dark); }
   .heat-cell.done-c3 { background: #F0997B; border-color: var(--coral); color: var(--coral-dark); }
-  .heat-cell.done-c4 { background: #FAC775; border-color: var(--amber); color: var(--amber-dark); }
+  .heat-cell.done-c4 { background: #FAC775; border-color: var(--amber); color: var(--amber-dark); } .heat-cell.done-c5 { background: #7DC4E8; border-color: #2E8BC0; color: #0E4A6B; } .heat-cell.done-c6 { background: #E89DD0; border-color: #C24FA0; color: #6B1E55; } .heat-cell.done-mixed { background: #D8D4CC; border-color: #B5B0A8; color: #5A554C; }
   .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
   .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
@@ -1882,7 +1911,7 @@ function downloadTracker() {
   .badge-c1 { background: var(--purple-light); color: var(--purple-dark); }
   .badge-c2 { background: var(--teal-light); color: var(--teal-dark); }
   .badge-c3 { background: var(--coral-light); color: var(--coral-dark); }
-  .badge-c4 { background: var(--amber-light); color: var(--amber-dark); }
+  .badge-c4 { background: var(--amber-light); color: var(--amber-dark); } .badge-c5 { background: #E3F2FA; color: #0E4A6B; } .badge-c6 { background: #FBE8F4; color: #6B1E55; } .badge-mixed { background: var(--bg-secondary); color: var(--text-secondary); }
   .day-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
   .day-tasks { font-size: 12px; color: var(--text-secondary); line-height: 1.65; }
   .day-xp { font-size: 11px; color: var(--purple); font-weight: 500; margin-top: 6px; }
@@ -1926,8 +1955,8 @@ function downloadTracker() {
 <script>
 const DAYS = ${daysJson};
 const CATEGORIES = ${cats};
-const CAT_CLASSES = ['c1','c2','c3','c4'];
-const CAT_COLORS = ['#AFA9EC','#5DCAA5','#F0997B','#FAC775'];
+const CAT_CLASSES = ['c1','c2','c3','c4','c5','c6'];
+const CAT_COLORS = ['#AFA9EC','#5DCAA5','#F0997B','#FAC775','#7DC4E8','#E89DD0'];
 const LEVEL_NAMES = ['','Apprentice','Practitioner','Engineer','Architect','Master'];
 const LEVEL_THRESHOLDS = [0,0,500,1200,2000,2800];
 const TOTAL_XP = DAYS.reduce((s,d)=>s+(d.xp||75),0);
@@ -1936,7 +1965,9 @@ try { completed = JSON.parse(localStorage.getItem('quest_${Date.now()}') || '[]'
 const SAVE_KEY = 'quest_progress_${trackerName.replace(/\s/g,'_')}';
 try { completed = JSON.parse(localStorage.getItem(SAVE_KEY)||'[]'); } catch(e){}
 function save(){ try{localStorage.setItem(SAVE_KEY, JSON.stringify(completed));}catch(e){} }
-function getCatClass(cat){ const i=CATEGORIES.indexOf(cat); return i>=0?CAT_CLASSES[i]:'c4'; }
+function getDayCats(d){ if(Array.isArray(d.categories)&&d.categories.length>0) return d.categories; if(d.category) return [d.category]; return []; }
+function getCatClass(cat){ const i=CATEGORIES.indexOf(cat); return i>=0?CAT_CLASSES[i]:'c1'; }
+function getDayCatClass(d){ const cats=getDayCats(d); if(cats.length>1) return 'mixed'; if(cats.length===1) return getCatClass(cats[0]); return 'c1'; }
 function getXP(){ return DAYS.reduce((s,d,i)=>completed.includes(i)?s+(d.xp||75):s,0); }
 function getLevel(xp){ if(xp>=2800)return 5;if(xp>=2000)return 4;if(xp>=1200)return 3;if(xp>=500)return 2;return 1; }
 function getStreak(){ let s=0; for(let i=DAYS.length-1;i>=0;i--){ if(completed.includes(i))s++;else break; } return s; }
@@ -1957,8 +1988,9 @@ function buildHeatmap(){
   const grid=document.getElementById('heatmap'); grid.innerHTML='';
   DAYS.forEach((d,i)=>{
     const cell=document.createElement('div'); cell.className='heat-cell';
-    if(completed.includes(i)) cell.classList.add('done-'+getCatClass(d.category));
-    cell.title=(d.date||'Day '+(i+1))+' — '+d.title;
+    if(completed.includes(i)) cell.classList.add('done-'+getDayCatClass(d));
+    const cats=getDayCats(d);
+    cell.title=(d.date||'Day '+(i+1))+' — '+d.title+(cats.length>1?' ('+cats.join(' + ')+')':'');
     cell.textContent=d.date?(d.date.split(' ')[1]||i+1):(i+1);
     cell.onclick=()=>toggleDay(i); grid.appendChild(cell);
   });
@@ -1975,8 +2007,10 @@ function buildDays(){
     check.innerHTML='<div class="checkmark"></div>'; check.onclick=()=>toggleDay(i);
     const dayNum=document.createElement('div'); dayNum.className='day-num';
     const dp=(d.date||'').split(' '); dayNum.innerHTML='<span class="num">'+(dp[1]||i+1)+'</span><span class="dow">'+(dp[0]||'')+'<br>'+(d.dow||'')+'</span>';
-    const cc=getCatClass(d.category); const body=document.createElement('div'); body.className='day-body';
-    body.innerHTML='<div class="day-badges"><span class="badge badge-'+cc+'">'+(d.category||'Task')+'</span>'+(d.isReview?'<span class="badge badge-c4">Review</span>':'')+'</div><div class="day-title">'+d.title+'</div><div class="day-tasks">'+d.tasks+'</div><div class="day-xp">⚡ +'+(d.xp||75)+' XP</div>';
+    const cats=getDayCats(d);
+    const badgesHtml=cats.map(c2=>'<span class="badge badge-'+getCatClass(c2)+'">'+c2+'</span>').join('');
+    const body=document.createElement('div'); body.className='day-body';
+    body.innerHTML='<div class="day-badges">'+badgesHtml+(d.isReview?'<span class="badge badge-review">Review</span>':'')+'</div><div class="day-title">'+d.title+'</div><div class="day-tasks">'+d.tasks+'</div><div class="day-xp">⚡ +'+(d.xp||75)+' XP</div>';
     card.appendChild(check); card.appendChild(dayNum); card.appendChild(body); c.appendChild(card);
   });
 }
@@ -2032,9 +2066,12 @@ function buildBreakdown() {
   const totals = {}, dones = {};
   CATEGORIES.forEach(c => { totals[c] = 0; dones[c] = 0; });
   DAYS.forEach((d, i) => {
-    if (!CATEGORIES.includes(d.category)) return;
-    totals[d.category]++;
-    if (completed.includes(i)) dones[d.category]++;
+    // A multi-category day counts fully toward EVERY category it touches
+    getDayCats(d).forEach(c => {
+      if (!CATEGORIES.includes(c)) return;
+      totals[c]++;
+      if (completed.includes(i)) dones[c]++;
+    });
   });
 
   const totalDays  = DAYS.length;
@@ -2043,11 +2080,14 @@ function buildBreakdown() {
 
   const R = 36, CX = 45, CY = 45, STROKE = 12;
   const circumference = 2 * Math.PI * R;
+  // Use the SUM of category totals (not totalDays) as the denominator so the
+  // donut always adds up to a full circle even when days count toward multiple categories.
+  const catTotalSum = CATEGORIES.reduce((s, c) => s + (totals[c] || 0), 0) || 1;
   let offset = 0;
   if (svgEl) {
     Array.from(svgEl.querySelectorAll('.donut-arc')).forEach(el => el.remove());
     CATEGORIES.forEach((cat, i) => {
-      const pct = totalDays ? (totals[cat] / totalDays) : 0;
+      const pct = totals[cat] / catTotalSum;
       const donePct = totals[cat] ? (dones[cat] / totals[cat]) : 0;
       const arcLen = circumference * pct;
       const filledLen = arcLen * donePct;
