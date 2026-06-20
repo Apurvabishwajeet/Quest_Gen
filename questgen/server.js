@@ -24,10 +24,20 @@ app.post('/api/generate', async (req, res) => {
 
   const totalDays = parseInt(weeks) * 7;
 
+  // Parse goals — frontend sends multiple goals joined by " | "
+  const goalsArr = goal ? goal.split(' | ').map(g => g.trim()).filter(Boolean) : [];
+  const hasMultiGoals = goalsArr.length > 1;
+
+  const categoryInstruction = hasMultiGoals
+    ? 'The user has ' + goalsArr.length + ' distinct goals. Use EXACTLY these as your category names (you may shorten each to a few words, but keep them distinct and recognizable):\n'
+      + goalsArr.map((g, i) => 'Category ' + (i + 1) + ': "' + g.slice(0, 50) + '"').join('\n')
+      + '\nEach day should have ONE primary category (the one taking the most time/focus that day), but the day\'s tasks can naturally blend in work toward other goals too. Distribute days across categories based on what each goal realistically needs — you decide the split.'
+    : 'Pick up to 4 short category names that fit the goal — be consistent across all days.';
+
   const prompt = `You are a personal coach. Create a day-by-day quest plan for someone with these details:
 
 Name: ${name || 'User'}
-Goal: ${goal}
+Goal: ${goalsArr.length ? goalsArr.join(', ') : goal}
 Focus areas: ${focus || 'General'}
 Current level: ${level || 'intermediate'}
 Duration: ${weeks} weeks (${totalDays} days)
@@ -35,11 +45,13 @@ Hours per day: ${hours || 3}
 Plan style: ${style || 'balanced'}
 Constraints: ${constraint || 'None'}
 
+${categoryInstruction}
+
 Return ONLY a valid JSON array (no markdown, no explanation, just raw JSON) with exactly ${totalDays} objects.
 Each object must have:
 - "title": string (short day title, max 8 words)
 - "tasks": string (2-3 specific actionable tasks for the day, separated by ". ")
-- "category": string (pick from up to 4 short category names you define for this plan — be consistent across days)
+- "category": string (one of the defined categories above — exact match required for consistency across days)
 - "isReview": boolean (true for every 7th day)
 - "xp": number (50 for review days, 75 or 100 for regular days)
 

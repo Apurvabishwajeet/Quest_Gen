@@ -784,7 +784,39 @@
   }
   .btn-restart:hover { color: var(--text-primary); }
 
-  @media (max-width: 520px) {
+    /* ── CATEGORY BREAKDOWN ── */
+  .breakdown-section { background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border-light); padding: 1.25rem; margin: 1.25rem 0; }
+  .breakdown-bars { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .breakdown-row { display: flex; align-items: center; gap: 10px; }
+  .breakdown-label { font-size: 12px; color: var(--text-secondary); min-width: 90px; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .breakdown-track { flex: 1; height: 8px; background: var(--bg-secondary); border-radius: 99px; overflow: hidden; border: 0.5px solid var(--border-light); }
+  .breakdown-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(0.16,1,0.3,1); width: 0%; }
+  .breakdown-meta { font-size: 11px; color: var(--text-tertiary); min-width: 60px; text-align: right; }
+  .breakdown-empty { font-size: 13px; color: var(--text-tertiary); text-align: center; padding: 1rem 0; }
+  .breakdown-top { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .donut-wrap { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
+  .donut-wrap svg { transform: rotate(-90deg); }
+  .donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .donut-center-num { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+  .donut-center-lbl { font-size: 9px; color: var(--text-tertiary); margin-top: 2px; }
+  .breakdown-legend { display: flex; flex-direction: column; gap: 6px; }
+  .breakdown-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary); }
+  .breakdown-legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── MULTI-GOAL INPUT ── */
+  .goals-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .goal-tag { display: flex; align-items: center; gap: 8px; background: var(--bg-secondary); border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); padding: 9px 12px; font-size: 13px; }
+  .goal-tag-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .goal-tag-text { flex: 1; color: var(--text-primary); line-height: 1.4; }
+  .goal-tag-remove { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 16px; padding: 0 2px; line-height: 1; flex-shrink: 0; }
+  .goal-tag-remove:hover { color: var(--coral-dark); }
+  .goal-add-row { display: flex; gap: 8px; }
+  .goal-add-row textarea { flex: 1; min-height: 60px; resize: vertical; }
+  .goal-add-btn { background: var(--purple); color: white; border: none; padding: 8px 14px; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; align-self: flex-end; white-space: nowrap; transition: opacity 0.15s; }
+  .goal-add-btn:hover { opacity: 0.85; }
+  .goal-empty-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+
+@media (max-width: 520px) {
     .stats-row { grid-template-columns: repeat(2, 1fr); }
     .heatmap-grid { grid-template-columns: repeat(6, 1fr); }
     .landing-title { font-size: 28px; }
@@ -906,10 +938,15 @@
 
     <!-- Your goal -->
     <div class="form-section">
-      <div class="form-section-title">Your goal</div>
+      <div class="form-section-title">Your goals <span id="goal-count-badge" class="goal-count-badge" style="display:none">0</span></div>
       <div class="field">
-        <label>What do you want to achieve? <span class="hint">be specific</span></label>
-        <textarea id="f-goal" placeholder="e.g. Learn Python and build 2 data science projects to get a research internship. Also prepare for GATE 2027 Maths."></textarea>
+        <label>Add your goals <span class="hint">one at a time — each becomes its own category</span></label>
+        <div class="goals-list" id="goals-list"></div>
+        <div class="goal-add-row">
+          <textarea id="f-goal-input" placeholder="e.g. Complete GATE CH Syllabus&#10;e.g. Learn CFD concepts and build 1 project&#10;e.g. Learn AI from scratch and build 2 projects"></textarea>
+          <button class="goal-add-btn" type="button" onclick="addGoal()">+ Add</button>
+        </div>
+        <div class="goal-empty-hint" id="goal-hint">Add at least one goal to continue. You can add up to 6.</div>
       </div>
       <div class="field">
         <label>Focus areas <span class="hint">pick all that apply</span></label>
@@ -1013,6 +1050,23 @@
       <div class="section-title">Progress Heatmap</div>
       <div class="heatmap-grid" id="heatmap"></div>
       <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="breakdown-section">
+      <div class="section-title">Category Breakdown</div>
+      <div class="breakdown-top">
+        <div class="donut-wrap">
+          <svg width="90" height="90" viewBox="0 0 90 90" id="donut-svg">
+            <circle cx="45" cy="45" r="36" fill="none" stroke="var(--bg-secondary)" stroke-width="12"/>
+          </svg>
+          <div class="donut-center">
+            <div class="donut-center-num" id="donut-pct">0%</div>
+            <div class="donut-center-lbl">done</div>
+          </div>
+        </div>
+        <div class="breakdown-legend" id="breakdown-legend"></div>
+      </div>
+      <div class="breakdown-bars" id="breakdown-bars"></div>
     </div>
 
     <div class="tabs">
@@ -1317,7 +1371,8 @@ async function generatePlan() {
   const start = document.getElementById('f-start').value;
   const weeks = parseInt(document.getElementById('f-weeks').value) || 4;
   const hours = parseFloat(document.getElementById('f-hours').value) || 3;
-  const goal = document.getElementById('f-goal').value.trim();
+  const goals = window._goals || [];
+  const goal = goals.join(' | ');
   const focus = getChipValues('chips-focus');
   const level = document.getElementById('f-level').value;
   const constraint = document.getElementById('f-constraint').value.trim();
@@ -1326,7 +1381,7 @@ async function generatePlan() {
 
   document.getElementById('error-box').style.display = 'none';
 
-  if (!goal) return showError('Please describe your goal.');
+  if (!goals.length) return showError('Please add at least one goal using the + Add button.');
 
   if (!start) return showError('Please pick a start date.');
 
@@ -1540,6 +1595,7 @@ function updateStats() {
   countUp('stat-streak', getStreak());
   countUp('stat-done', completed.length);
   countUp('stat-pct', pct, '%');
+  buildBreakdown();
 }
 
 function buildHeatmap() {
@@ -1855,6 +1911,145 @@ function spawnParticles() {
     container.appendChild(p);
   }
 }
+
+// ── CATEGORY BREAKDOWN ──
+function buildBreakdown() {
+  const barsEl   = document.getElementById('breakdown-bars');
+  const legendEl = document.getElementById('breakdown-legend');
+  const pctEl    = document.getElementById('donut-pct');
+  const svgEl    = document.getElementById('donut-svg');
+  if (!barsEl || !CATEGORIES.length) return;
+
+  const totals = {}, dones = {};
+  CATEGORIES.forEach(c => { totals[c] = 0; dones[c] = 0; });
+  DAYS.forEach((d, i) => {
+    if (!CATEGORIES.includes(d.category)) return;
+    totals[d.category]++;
+    if (completed.includes(i)) dones[d.category]++;
+  });
+
+  const totalDays  = DAYS.length;
+  const overallPct = totalDays ? Math.round((completed.length / totalDays) * 100) : 0;
+  if (pctEl) pctEl.textContent = overallPct + '%';
+
+  const R = 36, CX = 45, CY = 45, STROKE = 12;
+  const circumference = 2 * Math.PI * R;
+  let offset = 0;
+  if (svgEl) {
+    Array.from(svgEl.querySelectorAll('.donut-arc')).forEach(el => el.remove());
+    CATEGORIES.forEach((cat, i) => {
+      const pct = totalDays ? (totals[cat] / totalDays) : 0;
+      const donePct = totals[cat] ? (dones[cat] / totals[cat]) : 0;
+      const arcLen = circumference * pct;
+      const filledLen = arcLen * donePct;
+      if (filledLen > 0) {
+        const arc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        arc.setAttribute('cx', CX); arc.setAttribute('cy', CY); arc.setAttribute('r', R);
+        arc.setAttribute('fill', 'none');
+        arc.setAttribute('stroke', CAT_COLORS[i]);
+        arc.setAttribute('stroke-width', STROKE);
+        arc.setAttribute('stroke-dasharray', filledLen + ' ' + (circumference - filledLen));
+        arc.setAttribute('stroke-dashoffset', -offset);
+        arc.classList.add('donut-arc');
+        svgEl.appendChild(arc);
+      }
+      const unfilledLen = arcLen - filledLen;
+      if (unfilledLen > 1) {
+        const arc2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        arc2.setAttribute('cx', CX); arc2.setAttribute('cy', CY); arc2.setAttribute('r', R);
+        arc2.setAttribute('fill', 'none');
+        arc2.setAttribute('stroke', CAT_COLORS[i]);
+        arc2.setAttribute('stroke-width', STROKE);
+        arc2.setAttribute('opacity', '0.2');
+        arc2.setAttribute('stroke-dasharray', unfilledLen + ' ' + (circumference - unfilledLen));
+        arc2.setAttribute('stroke-dashoffset', -(offset + filledLen));
+        arc2.classList.add('donut-arc');
+        svgEl.appendChild(arc2);
+      }
+      offset += arcLen;
+    });
+  }
+
+  if (legendEl) {
+    legendEl.innerHTML = CATEGORIES.map((cat, i) => {
+      const pct = totals[cat] ? Math.round((dones[cat] / totals[cat]) * 100) : 0;
+      return '<div class="breakdown-legend-item">'
+        + '<div class="breakdown-legend-dot" style="background:' + CAT_COLORS[i] + '"></div>'
+        + '<span>' + cat + '</span>'
+        + '<span style="margin-left:4px;color:var(--text-tertiary);font-size:11px;">' + pct + '%</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  if (barsEl) {
+    barsEl.innerHTML = CATEGORIES.map((cat, i) => {
+      const total = totals[cat] || 0;
+      const done  = dones[cat]  || 0;
+      const pct   = total ? Math.round((done / total) * 100) : 0;
+      return '<div class="breakdown-row">'
+        + '<div class="breakdown-label">' + cat + '</div>'
+        + '<div class="breakdown-track">'
+        +   '<div class="breakdown-fill" style="width:' + pct + '%;background:' + CAT_COLORS[i] + '"></div>'
+        + '</div>'
+        + '<div class="breakdown-meta">' + done + ' / ' + total + ' days</div>'
+        + '</div>';
+    }).join('');
+  }
+}
+
+// ── MULTI-GOAL MANAGER ──
+const GOAL_COLORS = ['#7F77DD','#1D9E75','#D85A30','#BA7517','#FF7AC6','#50E3C2'];
+window._goals = [];
+
+function renderGoals() {
+  const list  = document.getElementById('goals-list');
+  const badge = document.getElementById('goal-count-badge');
+  const hint  = document.getElementById('goal-hint');
+  if (!list) return;
+  list.innerHTML = window._goals.map((g, i) =>
+    '<div class="goal-tag">'
+    + '<div class="goal-tag-dot" style="background:' + GOAL_COLORS[i % GOAL_COLORS.length] + '"></div>'
+    + '<div class="goal-tag-text">' + escapeHtml(g) + '</div>'
+    + '<button class="goal-tag-remove" type="button" onclick="removeGoal(' + i + ')" title="Remove">×</button>'
+    + '</div>'
+  ).join('');
+  if (badge) {
+    badge.textContent = window._goals.length;
+    badge.style.display = window._goals.length ? 'inline-block' : 'none';
+  }
+  if (hint) hint.textContent = window._goals.length === 0
+    ? 'Add at least one goal to continue. You can add up to 6.'
+    : window._goals.length < 6
+      ? window._goals.length + ' goal' + (window._goals.length > 1 ? 's' : '') + ' added. Add more or continue.'
+      : 'Maximum 6 goals reached.';
+}
+
+function addGoal() {
+  const inp = document.getElementById('f-goal-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) { inp.focus(); return; }
+  if (window._goals.length >= 6) return;
+  window._goals.push(val);
+  inp.value = '';
+  inp.focus();
+  renderGoals();
+}
+
+function removeGoal(i) {
+  window._goals.splice(i, 1);
+  renderGoals();
+}
+
+// Allow Enter+Shift to add, Enter alone submits
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('f-goal-input');
+  if (inp) {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addGoal(); }
+    });
+  }
+});
 
 // Init
 showLanding();
