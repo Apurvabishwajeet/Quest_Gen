@@ -38,6 +38,8 @@
     --amber: #BA7517;
     --amber-light: #FAEEDA;
     --amber-dark: #633806;
+    --form-bg-a: #E7E3FA;
+    --form-bg-b: #FBF3E1;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -58,6 +60,8 @@
       --coral-dark: #F5C4B3;
       --amber-light: #412402;
       --amber-dark: #FAC775;
+      --form-bg-a: #201c38;
+      --form-bg-b: #2b2218;
     }
   }
 
@@ -469,12 +473,16 @@
   }
 
   /* ── FORM PAGE ── */
-  #page-form { display: none; }
+  #page-form {
+    display: none;
+    min-height: 100vh;
+    background: linear-gradient(120deg, var(--form-bg-a) 0%, var(--form-bg-b) 100%);
+  }
 
   .form-wrap {
-    max-width: 560px;
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 2.5rem 1.25rem 4rem;
+    padding: 2.5rem 1.5rem 4rem;
   }
 
   .form-header { margin-bottom: 2rem; }
@@ -493,15 +501,51 @@
   }
   .form-back:hover { color: var(--text-primary); }
 
-  .form-title { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
-  .form-subtitle { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+  .form-title { font-size: 26px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.01em; }
+  .form-subtitle { font-size: 13.5px; color: var(--text-secondary); line-height: 1.55; max-width: 660px; }
 
-  .form-section {
-    background: var(--bg-primary);
-    border-radius: var(--radius-lg);
+  /* grid of cards */
+  .form-grid {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .card-profile     { flex: 1.05; min-width: 0; }
+  .form-col-stack   { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+  .card-focus       { flex: 1; min-width: 0; }
+
+  @media (max-width: 900px) {
+    .form-grid { flex-direction: column; }
+  }
+  @media (max-width: 640px) {
+    .form-wrap { padding: 1.75rem 1rem 3rem; }
+  }
+
+  .form-section,
+  .form-card {
+    position: relative;
+    background: linear-gradient(165deg, var(--bg-primary) 55%, var(--purple-light) 230%);
+    border-radius: 18px;
     border: 0.5px solid var(--border-light);
-    padding: 1.25rem;
+    padding: 1.5rem 1.5rem 1.6rem;
     margin-bottom: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 10px 28px -18px rgba(80,60,160,0.45);
+    overflow: hidden;
+  }
+  .form-grid .form-card { margin-bottom: 0; }
+
+  .form-card::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 130px; height: 130px;
+    pointer-events: none;
+    opacity: 0.6;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cg fill='none' stroke='%237F77DD' stroke-width='1' opacity='0.4'%3E%3Cline x1='18' y1='95' x2='58' y2='38'/%3E%3Cline x1='58' y1='38' x2='102' y2='62'/%3E%3Cline x1='58' y1='38' x2='82' y2='14'/%3E%3Cline x1='102' y1='62' x2='122' y2='28'/%3E%3C/g%3E%3Cg fill='%237F77DD' opacity='0.55'%3E%3Ccircle cx='18' cy='95' r='3'/%3E%3Ccircle cx='58' cy='38' r='2.5'/%3E%3Ccircle cx='82' cy='14' r='2'/%3E%3Ccircle cx='102' cy='62' r='2.5'/%3E%3Ccircle cx='122' cy='28' r='2'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: top right;
+    -webkit-mask-image: radial-gradient(circle at top right, black, transparent 72%);
+            mask-image: radial-gradient(circle at top right, black, transparent 72%);
   }
 
   .form-section-title {
@@ -513,7 +557,31 @@
     margin-bottom: 1rem;
   }
 
-  .field { margin-bottom: 1rem; }
+  .form-card-title {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.2rem;
+  }
+  .card-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--purple);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .field { position: relative; z-index: 1; margin-bottom: 1rem; }
   .field:last-child { margin-bottom: 0; }
 
   label {
@@ -534,41 +602,57 @@
   input[type="text"], input[type="date"], input[type="number"], select, textarea {
     width: 100%;
     background: var(--bg-secondary);
-    border: 0.5px solid var(--border-mid);
-    border-radius: var(--radius-md);
+    border: 1px solid var(--border-mid);
+    border-radius: 10px;
     padding: 10px 12px;
     font-size: 14px;
     color: var(--text-primary);
     font-family: inherit;
     outline: none;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
 
   input:focus, select:focus, textarea:focus {
     border-color: var(--purple);
+    box-shadow: 0 0 0 3px var(--purple-light);
   }
 
   textarea { resize: vertical; min-height: 80px; line-height: 1.55; }
 
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+  .input-icon-wrap { position: relative; }
+  .input-icon-wrap input { padding-left: 34px; }
+  .input-icon-wrap .input-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
   .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
   .chip {
-    padding: 6px 14px;
+    padding: 7px 14px;
     border-radius: 99px;
     border: 1px solid var(--border-mid);
-    font-size: 12px;
+    font-size: 12.5px;
+    font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
-    background: var(--bg-secondary);
+    background: var(--bg-primary);
     transition: all 0.15s;
     user-select: none;
   }
+  .chip:hover { border-color: var(--purple); color: var(--text-primary); }
   .chip.selected {
     background: var(--purple-light);
     border-color: var(--purple);
     color: var(--purple-dark);
-    font-weight: 500;
+    font-weight: 600;
+    box-shadow: 0 2px 8px -3px rgba(127,119,221,0.5);
   }
 
   .api-note {
@@ -596,22 +680,26 @@
     padding: 2px 4px;
   }
 
-  .submit-area { margin-top: 1.5rem; text-align: center; }
+  .submit-area { margin-top: 1.75rem; text-align: center; }
   .btn-generate {
-    background: var(--purple);
+    background: linear-gradient(95deg, var(--purple) 0%, #9C6FD8 45%, #C162B0 100%);
     color: white;
     border: none;
-    padding: 14px 36px;
+    padding: 15px 36px;
     border-radius: 99px;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 15.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     cursor: pointer;
     font-family: inherit;
-    transition: opacity 0.15s, transform 0.1s;
+    transition: opacity 0.15s, transform 0.12s, box-shadow 0.15s;
     width: 100%;
+    max-width: 660px;
+    box-shadow: 0 12px 26px -10px rgba(127,90,200,0.6);
   }
-  .btn-generate:hover { opacity: 0.88; }
-  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-generate:hover { transform: translateY(-1px); box-shadow: 0 16px 30px -10px rgba(127,90,200,0.65); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
   .error-box {
     background: var(--coral-light);
@@ -624,6 +712,7 @@
     display: none;
     line-height: 1.5;
   }
+
 
   /* ── LOADING PAGE ── */
   #page-loading {
@@ -855,15 +944,16 @@
 
   /* ── MULTI-GOAL INPUT ── */
   .goals-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
-  .goal-tag { display: flex; align-items: center; gap: 8px; background: var(--bg-secondary); border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); padding: 9px 12px; font-size: 13px; }
-  .goal-tag-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .goal-tag { display: flex; align-items: center; gap: 9px; background: var(--bg-secondary); border: 1px solid var(--border-light); border-radius: 10px; padding: 9px 12px; font-size: 13px; }
+  .goal-tag-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .goal-tag-text { flex: 1; color: var(--text-primary); line-height: 1.4; }
   .goal-tag-remove { background: none; border: none; color: var(--text-tertiary); cursor: pointer; font-size: 16px; padding: 0 2px; line-height: 1; flex-shrink: 0; }
   .goal-tag-remove:hover { color: var(--coral-dark); }
+  .goal-count-badge { display: inline-block; background: var(--purple); color: #fff; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 99px; margin-left: 4px; vertical-align: middle; }
   .goal-add-row { display: flex; gap: 8px; }
   .goal-add-row textarea { flex: 1; min-height: 60px; resize: vertical; }
-  .goal-add-btn { background: var(--purple); color: white; border: none; padding: 8px 14px; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; align-self: flex-end; white-space: nowrap; transition: opacity 0.15s; }
-  .goal-add-btn:hover { opacity: 0.85; }
+  .goal-add-btn { background: var(--purple); color: white; border: none; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; align-self: stretch; white-space: nowrap; transition: opacity 0.15s, transform 0.1s; }
+  .goal-add-btn:hover { opacity: 0.88; }
   .goal-empty-hint { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
 
 @media (max-width: 520px) {
@@ -963,84 +1053,101 @@
       <p class="form-subtitle">Fill this in and we'll generate a day-by-day plan tailored to you — complete with tasks, XP, and a progress tracker.</p>
     </div>
 
-    <!-- About you -->
-    <div class="form-section">
-      <div class="form-section-title">About you</div>
-      <div class="field">
-        <label>Your name <span class="hint">shown on the tracker</span></label>
-        <input type="text" id="f-name" placeholder="e.g. Arjun" maxlength="40" />
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Start date</label>
-          <input type="date" id="f-start" />
-        </div>
-        <div class="field">
-          <label>Duration <span class="hint">weeks</span></label>
-          <input type="number" id="f-weeks" min="1" max="16" value="4" />
-        </div>
-      </div>
-      <div class="field">
-        <label>Hours available per day <span class="hint">realistic average</span></label>
-        <input type="number" id="f-hours" min="1" max="12" value="3" step="0.5" />
-      </div>
-    </div>
+    <div class="form-grid">
 
-    <!-- Your goal -->
-    <div class="form-section">
-      <div class="form-section-title">Your goals <span id="goal-count-badge" class="goal-count-badge" style="display:none">0</span></div>
-      <div class="field">
-        <label>Add your goals <span class="hint">one at a time — each becomes its own category</span></label>
-        <div class="goals-list" id="goals-list"></div>
-        <div class="goal-add-row">
-          <textarea id="f-goal-input" placeholder="e.g. Complete GATE CH Syllabus&#10;e.g. Learn CFD concepts and build 1 project&#10;e.g. Learn AI from scratch and build 2 projects"></textarea>
-          <button class="goal-add-btn" type="button" onclick="addGoal()">+ Add</button>
-        </div>
-        <div class="goal-empty-hint" id="goal-hint">Add at least one goal to continue. You can add up to 6.</div>
-      </div>
-      <div class="field">
-        <label>Focus areas <span class="hint">pick all that apply</span></label>
-        <div class="chip-group" id="chips-focus">
-          <span class="chip" data-val="Coding / Programming">💻 Coding</span>
-          <span class="chip" data-val="Machine Learning / AI">🤖 ML / AI</span>
-          <span class="chip" data-val="Competitive Exams">📚 Exams</span>
-          <span class="chip" data-val="Design / UI">🎨 Design</span>
-          <span class="chip" data-val="Mathematics">🧮 Maths</span>
-          <span class="chip" data-val="Research">🔬 Research</span>
-          <span class="chip" data-val="Business / Startup">🚀 Business</span>
-          <span class="chip" data-val="Writing / Content">✍️ Writing</span>
-          <span class="chip" data-val="Fitness / Health">💪 Fitness</span>
-          <span class="chip" data-val="Language Learning">🌍 Language</span>
-          <span class="chip" data-val="Finance / Investing">📈 Finance</span>
-          <span class="chip" data-val="Other">✨ Other</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>Current level <span class="hint">in your main focus</span></label>
-        <select id="f-level">
-          <option value="complete beginner">Complete beginner</option>
-          <option value="know the basics">Know the basics</option>
-          <option value="intermediate" selected>Intermediate</option>
-          <option value="advanced">Advanced</option>
-        </select>
-      </div>
-    </div>
+      <!-- Personal Profile -->
+      <div class="form-card card-profile">
+        <div class="form-card-title"><span class="card-num">1</span> Personal Profile</div>
 
-    <!-- Preferences -->
-    <div class="form-section">
-      <div class="form-section-title">Preferences</div>
-      <div class="field">
-        <label>What's your biggest constraint? <span class="hint">optional</span></label>
-        <input type="text" id="f-constraint" placeholder="e.g. College resumes in August, no laptop on weekends" />
-      </div>
-      <div class="field">
-        <label>Style of plan</label>
-        <div class="chip-group" id="chips-style">
-          <span class="chip selected" data-val="balanced">⚖️ Balanced</span>
-          <span class="chip" data-val="intense / aggressive">🔥 Intense</span>
-          <span class="chip" data-val="gentle / sustainable">🌱 Gentle</span>
+        <div class="field">
+          <label>Your name <span class="hint">shown on the tracker</span></label>
+          <div class="input-icon-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="f-name" placeholder="e.g. Arjun" maxlength="40" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Add your goals <span class="hint">one at a time — each becomes its own category</span> <span id="goal-count-badge" class="goal-count-badge" style="display:none">0</span></label>
+          <div class="goals-list" id="goals-list"></div>
+          <div class="goal-add-row">
+            <textarea id="f-goal-input" placeholder="e.g. Complete GATE CH Syllabus&#10;e.g. Learn CFD concepts and build 1 project&#10;e.g. Learn AI from scratch and build 2 projects"></textarea>
+            <button class="goal-add-btn" type="button" onclick="addGoal()">+ Add</button>
+          </div>
+          <div class="goal-empty-hint" id="goal-hint">Add at least one goal to continue. You can add up to 6.</div>
         </div>
       </div>
+
+      <!-- Define Your Quest + Personalize Your Plan (stacked) -->
+      <div class="form-col-stack">
+        <div class="form-card card-quest">
+          <div class="form-card-title"><span class="card-num">2</span> Define Your Quest</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Start date</label>
+              <input type="date" id="f-start" />
+            </div>
+            <div class="field">
+              <label>Duration <span class="hint">weeks</span></label>
+              <input type="number" id="f-weeks" min="1" max="16" value="4" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Hours available per day <span class="hint">realistic average</span></label>
+            <div class="input-icon-wrap">
+              <span class="input-icon">🕒</span>
+              <input type="number" id="f-hours" min="1" max="12" value="3" step="0.5" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-card card-personalize">
+          <div class="form-card-title"><span class="card-num">3</span> Personalize Your Plan</div>
+          <div class="field">
+            <label>What's your biggest constraint? <span class="hint">optional</span></label>
+            <input type="text" id="f-constraint" placeholder="e.g. College resumes in August, no laptop on weekends" />
+          </div>
+          <div class="field">
+            <label>Style of plan</label>
+            <div class="chip-group" id="chips-style">
+              <span class="chip selected" data-val="balanced">⚖️ Balanced</span>
+              <span class="chip" data-val="intense / aggressive">🔥 Intense</span>
+              <span class="chip" data-val="gentle / sustainable">🌱 Gentle</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Focus areas + level -->
+      <div class="form-card card-focus">
+        <div class="field">
+          <label>Focus areas <span class="hint">pick all that apply</span></label>
+          <div class="chip-group" id="chips-focus">
+            <span class="chip" data-val="Coding / Programming">💻 Coding</span>
+            <span class="chip" data-val="Machine Learning / AI">🤖 ML / AI</span>
+            <span class="chip" data-val="Competitive Exams">📚 Exams</span>
+            <span class="chip" data-val="Design / UI">🎨 Design</span>
+            <span class="chip" data-val="Mathematics">🧮 Maths</span>
+            <span class="chip" data-val="Research">🔬 Research</span>
+            <span class="chip" data-val="Business / Startup">🚀 Business</span>
+            <span class="chip" data-val="Writing / Content">✍️ Writing</span>
+            <span class="chip" data-val="Fitness / Health">💪 Fitness</span>
+            <span class="chip" data-val="Language Learning">🌍 Language</span>
+            <span class="chip" data-val="Finance / Investing">📈 Finance</span>
+            <span class="chip" data-val="Other">✨ Other</span>
+          </div>
+        </div>
+        <div class="field" style="margin-top:1.3rem">
+          <label>Current level <span class="hint">in your main focus</span></label>
+          <select id="f-level">
+            <option value="complete beginner">Complete beginner</option>
+            <option value="know the basics">Know the basics</option>
+            <option value="intermediate" selected>Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+
     </div>
 
     <div class="submit-area">
